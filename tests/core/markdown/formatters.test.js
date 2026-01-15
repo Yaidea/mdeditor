@@ -6,7 +6,8 @@
 import { describe, it, expect } from 'vitest'
 import { defaultColorTheme, getCodeStyle } from '../../../src/config/theme-presets.js'
 import { processAllInlineFormats } from '../../../src/core/markdown/inline-formatter.js'
-import { formatCodeBlock, formatBlockquote } from '../../../src/core/markdown/formatters/legacy.js'
+import { formatCodeBlock } from '../../../src/core/markdown/code-formatter.js'
+import { formatBlockquote } from '../../../src/core/markdown/parser.js'
 
 describe('Markdown 格式化基础', () => {
   it('内联格式应生成正确的 HTML（粗体/斜体/高亮/内联代码）', () => {

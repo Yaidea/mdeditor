@@ -136,6 +136,36 @@ export class TextUtils {
 
 
   /**
+   * 剥离 HTML 标签，返回纯文本
+   * 用于将 HTML 内容转换为纯文本（如剪贴板操作）
+   * @param {string} html - 包含 HTML 标签的字符串
+   * @param {Object} options - 选项
+   * @param {boolean} options.normalizeWhitespace - 是否规范化空白字符（默认 true）
+   * @param {boolean} options.trim - 是否去除首尾空白（默认 true）
+   * @returns {string} 剥离标签后的纯文本
+   */
+  static stripHtmlTags(html, options = {}) {
+    if (!html) return '';
+
+    const {
+      normalizeWhitespace = true,
+      trim = true
+    } = options;
+
+    let result = String(html).replace(/<[^>]*>/g, '');
+
+    if (normalizeWhitespace) {
+      result = result.replace(/\s+/g, ' ');
+    }
+
+    if (trim) {
+      result = result.trim();
+    }
+
+    return result;
+  }
+
+  /**
    * 生成安全的HTML属性值
    * @param {string} value - 属性值
    * @returns {string} 安全的属性值
@@ -163,3 +193,4 @@ export class TextUtils {
 export const escapeHtml = TextUtils.escapeHtml;
 export const cleanUrl = TextUtils.cleanUrl;
 export const sanitizeAttribute = TextUtils.sanitizeAttribute;
+export const stripHtmlTags = TextUtils.stripHtmlTags;

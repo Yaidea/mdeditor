@@ -7,9 +7,10 @@
  * - MD格式：原始Markdown文本
  */
 
-import { parseMarkdown } from '../markdown/parser/index.js';
+import { parseMarkdown } from '../markdown/index.js';
 import { copyToSocialClean } from './clipboard.js';
 import mermaid from 'mermaid';
+import { DOMUtils, OFFSCREEN_STYLES } from '../../shared/utils/dom.js';
 
 /**
  * 运行 mermaid，将容器内的 mermaid 元素转换为 SVG
@@ -41,14 +42,11 @@ async function renderMermaidInContainer(container) {
     // 仅在离屏容器内逐个渲染，完全避免全局查询
     container.querySelectorAll('.mermaid svg').forEach(s => s.remove());
     const mermaidBlocks = Array.from(container.querySelectorAll('.mermaid'));
-    // 隔离 mermaid 的错误输出，避免写入到页面 body
-    const sandbox = document.createElement('div');
-    sandbox.style.position = 'fixed';
-    sandbox.style.left = '-99999px';
-    sandbox.style.top = '-99999px';
+
+    // 隔离 mermaid 的错误输出，避免写入到页面 body（使用统一的离屏样式）
+    const sandbox = DOMUtils.createOffscreenContainer('', 'fixed');
     sandbox.style.width = '0';
     sandbox.style.height = '0';
-    sandbox.style.overflow = 'hidden';
     document.body.appendChild(sandbox);
 
     try {
@@ -66,7 +64,7 @@ async function renderMermaidInContainer(container) {
         }
       }
     } finally {
-      sandbox.remove();
+      DOMUtils.safeRemove(sandbox);
     }
   } catch (e) {
     console.warn('Mermaid 渲染失败（复制流程继续）：', e);
@@ -358,18 +356,8 @@ export async function copySocialFormat(markdownText, options = {}) {
     // 1) 先生成社交版 HTML（含 mermaid 容器）
     const socialHtml = generateSocialHtml(markdownText, options);
 
-    // 2) 创建离屏容器，渲染 mermaid 为 SVG
-    const container = document.createElement('div');
-    container.style.position = 'fixed';
-    container.style.lineHeight = 'normal';
-    container.style.left = '-99999px';
-    container.style.top = '-99999px';
-    // 重要：为 gantt 等需要容器宽度参与布局的图提供足够宽度
-    container.style.width = '1024px';
-    container.style.height = 'auto';
-    container.style.opacity = '0';
-    container.style.pointerEvents = 'none';
-    container.innerHTML = socialHtml;
+    // 2) 创建离屏容器，渲染 mermaid 为 SVG（使用统一的离屏样式）
+    const container = DOMUtils.createOffscreenContainer(socialHtml, 'render');
     document.body.appendChild(container);
 
     await renderMermaidInContainer(container);
@@ -380,21 +368,19 @@ export async function copySocialFormat(markdownText, options = {}) {
     // 5) 获取最终 HTML 并复制
     const finalHtml = container.innerHTML;
 
-    // 清理容器
-    if (document.body.contains(container)) {
-      document.body.removeChild(container);
-    }
+    // 清理容器（使用统一的 DOM 工具）
+    DOMUtils.safeRemove(container);
 
     const success = await copyToSocialClean(finalHtml, options.fontSettings);
 
     return {
       success,
-      message: success ? '🎉 公众号格式已复制！可以粘贴到社交平台编辑器' : '❌ 复制失败，请重试'
+      message: success ? '🎉 公众号格式已复制，可以粘贴到社交平台编辑器' : '❌ 复制失败，请重试'
     };
   } catch (error) {
     return {
       success: false,
-      message: `❌ 复制失败：${error.message}`
+      message: `❌ 复制失败: ${error.message}`
     };
   }
 }
@@ -417,12 +403,12 @@ export async function copyMarkdownFormat(markdownText) {
 
     return {
       success,
-      message: success ? '📝 Markdown格式已复制到剪贴板' : '❌ 复制失败，请重试'
+      message: success ? '📝 Markdown 格式已复制到剪贴板' : '❌ 复制失败，请重试'
     };
   } catch (error) {
     return {
       success: false,
-      message: `❌ 复制失败：${error.message}`
+      message: `❌ 复制失败: ${error.message}`
     };
   }
 }

@@ -18,20 +18,7 @@
         @click="$emit('select', themeSystem.id)"
       >
         <div class="theme-system-preview">
-          <div class="theme-system-header">
-            <div class="theme-system-title">{{ tn(`settings.themeSystem.items.${themeSystem.id}.name`, themeSystem.name) }}</div>
-            <div class="theme-system-colors">
-              <span
-                v-for="colorId in themeSystem.supportedColors.slice(0, 4)"
-                :key="colorId"
-                class="color-dot"
-                :style="{ backgroundColor: getColorPreview(colorId) }"
-              ></span>
-              <span v-if="themeSystem.supportedColors.length > 4" class="color-more">
-                +{{ themeSystem.supportedColors.length - 4 }}
-              </span>
-            </div>
-          </div>
+          <div class="theme-system-title">{{ tn(`settings.themeSystem.items.${themeSystem.id}.name`, themeSystem.name) }}</div>
           <div class="theme-system-description">{{ tn(`settings.themeSystem.items.${themeSystem.id}.description`, themeSystem.description) }}</div>
         </div>
 
@@ -64,21 +51,6 @@ defineProps({
 })
 
 defineEmits(['select'])
-
-// 获取颜色预览
-const getColorPreview = (colorId) => {
-  const colorMap = {
-    chijin: '#FF0097',
-    dianlan: '#56004F',
-    ehuang: '#FFA631',
-    conglv: '#0AA344',
-    shiliuhong: '#F20C00',
-    meihei: '#312C20',
-    ganziqing: '#003371',
-    xuanse: '#622A1D'
-  }
-  return colorMap[colorId] || '#312C20'
-}
 </script>
 
 <style scoped>
@@ -177,12 +149,6 @@ const getColorPreview = (colorId) => {
   gap: 16px;
 }
 
-.theme-system-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-}
-
 .theme-system-title {
   font-weight: 700;
   font-size: 18px;
@@ -193,32 +159,6 @@ const getColorPreview = (colorId) => {
 
 .theme-system-card:hover .theme-system-title {
   color: var(--theme-primary);
-}
-
-.theme-system-colors {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.color-dot {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  border: 2px solid var(--theme-bg-primary);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: all 0.2s ease;
-}
-
-.theme-system-card:hover .color-dot {
-  transform: scale(1.1);
-}
-
-.color-more {
-  font-size: 12px;
-  color: var(--theme-text-secondary);
-  margin-left: 4px;
-  font-weight: 600;
 }
 
 .theme-system-description {

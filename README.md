@@ -92,22 +92,24 @@
   - **Vue 3**：组件化与响应式核心，使用 `<script setup>` 与组合式 API 实现清晰的 UI 与状态管理。
   - **Vite 5**：极速开发服务器与构建工具，HMR 体验优秀，使用官方插件 `@vitejs/plugin-vue` 处理 `.vue`。
 - **编辑器**
-  - **CodeMirror 6 + vue-codemirror**：提供高性能文本编辑、快捷键与滚动事件。在 `src/composables/editor/` 封装编辑器的生命周期、操作与状态。
+- **CodeMirror 6**：提供高性能文本编辑、快捷键与滚动事件。在 `src/composables/editor/` 封装编辑器的生命周期、操作与状态。
   - **所见即所得（Milkdown）**：基于 `@milkdown/core`、`preset-commonmark`、`preset-gfm`、`plugin-prism`、`plugin-history`、`plugin-clipboard` 与自定义 Mermaid NodeView；组件：`src/components/WysiwygPane.vue`。
 - **Markdown 渲染管线**
-  - `src/core/markdown/parser/*`：解析协调器与多策略解析；`PreviewPane.vue` 调用 `parseMarkdown` 生成预览版与社交版 HTML。
-  - `src/core/markdown/post-processors/social-styler.js` 与 `adapters/*`：为 HTML 注入内联样式并进行主题化适配，兼容公众号等粘贴环境。
+  - `src/core/markdown/parser.js`：单文件解析入口，顺序处理代码块/列表/表格/引用/标题/段落；`PreviewPane.vue` 调用 `parseMarkdown` 生成预览版与社交版 HTML。
+  - `src/core/markdown/inline-formatter.js`：行内语法处理（加粗/斜体/链接/图片/转义等）。
+  - `src/core/markdown/code-formatter.js`：代码块高亮与渲染（含 Mermaid 特判与社交复制样式）。
+  - `src/core/markdown/social-adapters.js`：社交平台适配与内联样式注入，提供可注册的主题适配器。
 - **复制链路**
   - `src/core/editor/copy-formats.js`：一键生成社交版/Markdown 两种复制格式。
   - `src/core/editor/clipboard.js`：Clipboard API 优先，失败降级到 `execCommand`；模拟社交平台容器，处理字体/行高/字距等细节。
 - **主题系统**
-  - `src/core/theme/manager.js`：集中管理并写入 CSS 变量；`theme-loader.js` 首屏预注入，避免 FOUC；`styles/themes/*` 与 `core/theme/presets/*` 提供预设。
+  - `src/core/theme/manager.js`：集中管理并写入 CSS 变量；`src/core/theme/loader.js` 首屏预注入，避免 FOUC；`src/styles/themes/*` 为样式基线，预设数据在 `src/config/theme-presets.js`。
 - **样式基线**
   - `github-markdown-css`：为 Markdown 预览提供一致的基础排版，结合自定义 CSS 变量与主题系统统一风格。
 - **测试体系**
-  - **Vitest + @vue/test-utils + jsdom**：单元测试与覆盖率统计（脚本：`test`、`test:ui`、`test:coverage`）。
+  - **Vitest + @vue/test-utils + jsdom**：脚本：`test`、`test:ui`、`test:coverage`。
 - **目录分层**
-  - `components/`（UI） · `composables/`（复用逻辑） · `core/`（编辑器/解析/主题/复制） · `config/`（常量与工具栏） · `styles/`（全局与组件样式）。
+  - `components/`（UI） · `composables/`（复用逻辑） · `core/`（编辑器/解析/主题/复制） · `config/`（常量与工具栏） · `shared/`（公共工具函数） · `styles/`（全局与组件样式）。
 
 ## 环境要求
 
@@ -236,14 +238,15 @@ docker run -d --name mdeditor -p 8080:80 helongisno1/mdeditor:latest
 - **编辑器组件**：`src/components/MarkdownEditor.vue`
 - **预览组件**：`src/components/PreviewPane.vue`
 - **所见即所得组件**：`src/components/WysiwygPane.vue`
-- **设置面板**：`src/components/SettingsPanel.vue`、`src/components/SettingsPanelTabbed.vue`
+- **设置面板**：`src/components/SettingsPanel.vue`
 - **工具栏配置**：`src/config/toolbar.js`（数据驱动，便于新增/重排按钮）
 - **复制能力**：`src/core/editor/copy-formats.js`、`src/core/editor/clipboard.js`
 - **Markdown 解析与社交样式后处理**：
-  - 解析协调：`src/core/markdown/parser/coordinator.js`
-  - 社交样式化：`src/core/markdown/post-processors/social-styler.js`
-  - 主题适配器（可扩展）：`src/core/markdown/post-processors/adapters/`
-- **主题系统（CSS 变量）**：`src/core/theme/manager.js`、`src/core/theme/theme-loader.js`
+  - 解析入口：`src/core/markdown/parser.js`
+  - 行内格式：`src/core/markdown/inline-formatter.js`
+  - 代码块渲染：`src/core/markdown/code-formatter.js`
+  - 社交样式化与适配：`src/core/markdown/social-adapters.js`
+- **主题系统（CSS 变量）**：`src/core/theme/manager.js`、`src/core/theme/loader.js`
 
 ### 复制/格式化 API（用于二次开发）
 
@@ -276,12 +279,12 @@ import { copyMarkdownFormat } from './src/core/editor/copy-formats.js'
 const { success, message } = await copyMarkdownFormat(markdownText)
 ```
 
-- **扩展社交主题适配**：在 `src/core/markdown/post-processors/adapters/` 目录中新增主题适配器，并在 `adapters/index.js` 注册，即可对标题、列表、引用、图片、表格等进行更细致的主题化修饰。
+- **扩展社交主题适配**：在 `src/core/markdown/social-adapters.js` 中新增适配器，并通过 `registerThemeCopyAdapter` 注册，即可对标题、列表、引用、图片、表格等进行更细致的主题化修饰。
 
 ### 预览与主题说明
 
 - **视口模式**：右上角可切换 `desktop / tablet / mobile`，便于在不同屏宽下预览排版效果。
-- **主题预加载**：`src/core/theme/theme-loader.js` 在页面首屏注入 CSS 变量，避免切换前闪烁。
+- **主题预加载**：`src/core/theme/loader.js` 在页面首屏注入 CSS 变量，避免切换前闪烁。
 - **CSS 变量管理**：`src/core/theme/manager.js` 统一写入颜色/代码样式/排版/字体变量，支持一次性合并写入提升性能。
 
 ### 配置与默认值
@@ -316,8 +319,8 @@ const { success, message } = await copyMarkdownFormat(markdownText)
 
 - **开发建议**：
   - 新增工具栏按钮：改造 `src/config/toolbar.js`
-  - 扩展社交样式：在 `post-processors/adapters/` 新增适配器
-  - 新增颜色主题/代码样式：修改 `src/core/theme/presets/`
+  - 扩展社交样式：在 `src/core/markdown/social-adapters.js` 注册适配器
+  - 新增颜色主题/代码样式：修改 `src/config/theme-presets.js`
 
 ## 许可证
 
@@ -358,4 +361,3 @@ const { success, message } = await copyMarkdownFormat(markdownText)
 ## Star History
 
 [![Star History Chart](https://api.star-history.com/svg?repos=xiaobox/mdeditor&type=Date)](https://www.star-history.com/#xiaobox/mdeditor&Date)
-

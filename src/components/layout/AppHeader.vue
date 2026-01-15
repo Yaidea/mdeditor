@@ -66,6 +66,7 @@
         :model-value="selectedCopyFormat"
         :trigger-text="$t('header.copy')"
         trigger-class="header-btn"
+        :show-selection="false"
         :disabled="!hasContent"
         @update:model-value="$emit('update:selected-copy-format', $event)"
         @select="$emit('copy-format-select', $event)"
@@ -170,4 +171,3 @@ const emit = defineEmits([
 <style scoped>
 @import '../../styles/components/layout/app-header.css';
 </style>
-

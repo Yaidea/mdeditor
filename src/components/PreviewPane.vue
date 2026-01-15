@@ -48,7 +48,7 @@
 
 <script>
 import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
-import { parseMarkdown } from '../core/markdown/parser/coordinator.js'
+import { parseMarkdown } from '../core/markdown/index.js'
 import { useGlobalThemeManager } from '../composables/index.js'
 import { escapeHtml as sharedEscapeHtml } from '../shared/utils/text.js'
 import mermaid from 'mermaid'
@@ -415,4 +415,3 @@ export default {
   }
 }
 </script>
-

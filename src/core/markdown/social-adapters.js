@@ -3,10 +3,11 @@
  * @description 社交平台复制适配器
  *
  * 合并以下处理逻辑：
- * - SocialStyler 类
- * - wrapWithFontStyles 函数
- * - breezeCopyAdapter 对象
- * - getThemeCopyAdapter 注册表
+ * - SocialStyler 类：统一的社交样式处理入口
+ * - wrapWithFontStyles 函数：包裹 HTML 并注入字体样式
+ * - breezeCopyAdapter 对象：Breeze 主题适配器
+ * - getThemeCopyAdapter / registerThemeCopyAdapter：适配器注册表
+ * - applySocialAdapter 函数：应用社交适配器的统一入口
  */
 
 import { calculateLineHeight as calcLH } from '../../shared/utils/typography.js';

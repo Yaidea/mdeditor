@@ -37,6 +37,8 @@ import {
   EDITOR_CONFIG,
 } from '../../config/constants/index.js';
 import { ErrorHandler, ERROR_TYPES } from '../../shared/utils/error.js';
+import { OFFSCREEN_STYLES, DOMUtils } from '../../shared/utils/dom.js';
+import { TextUtils } from '../../shared/utils/text.js';
 
 /**
  * 创建一个用于富文本复制的临时 DOM 容器。
@@ -102,17 +104,8 @@ function createRichTextContainer(html, fontSettings = null) {
     text-align: left;
   `;
 
-  // 将其放置在屏幕外，用户不可见，并优化性能
-  container.style.position = 'absolute';
-  container.style.left = '-9999px';
-  container.style.top = '-9999px';
-  container.style.width = '1px';
-  container.style.height = '1px';
-  container.style.opacity = '0';
-  container.style.overflow = 'hidden';
-  container.style.pointerEvents = 'none';
-  container.style.zIndex = '-1';
-  container.style.visibility = 'hidden';
+  // 将其放置在屏幕外，用户不可见，并优化性能（使用统一的离屏样式）
+  DOMUtils.applyStyles(container, OFFSCREEN_STYLES.absolute);
 
   container.innerHTML = html;
   return container;
@@ -124,7 +117,7 @@ function createRichTextContainer(html, fontSettings = null) {
  */
 async function copyWithClipboardAPI(html, plainText) {
   const blobHtml = new Blob([html], { type: 'text/html' });
-  const blobText = new Blob([plainText || html.replace(/<[^>]*>/g, '')], { type: 'text/plain' });
+  const blobText = new Blob([plainText || TextUtils.stripHtmlTags(html)], { type: 'text/plain' });
   await navigator.clipboard.write([new ClipboardItem({ 'text/html': blobHtml, 'text/plain': blobText })]);
 }
 
@@ -139,7 +132,7 @@ function copyWithExecCommandViaListener(html, plainText) {
     const onCopy = (e) => {
       try {
         e.clipboardData.setData('text/html', html);
-        e.clipboardData.setData('text/plain', plainText || html.replace(/<[^>]*>/g, ''));
+        e.clipboardData.setData('text/plain', plainText || TextUtils.stripHtmlTags(html));
         e.preventDefault();
         succeeded = true;
       } catch (_) {}
@@ -213,10 +206,12 @@ export async function copyToSocialClean(html, fontSettings = null) {
     });
 
     const copyPromise = async () => {
+      // 使用统一的文本工具来剥离 HTML 标签
+      const plainText = TextUtils.stripHtmlTags(html);
+
       // 优先尝试纯API方式，完全避免DOM操作
       if (navigator.clipboard && navigator.clipboard.write) {
         try {
-          const plainText = html.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
           await copyWithClipboardAPI(html, plainText);
           return true;
         } catch (apiError) {
@@ -224,56 +219,34 @@ export async function copyToSocialClean(html, fontSettings = null) {
         }
       }
 
-      // 如果纯API失败，优先采用“copy事件监听”方式，不产生选区/不插入DOM，避免页面抖动
+      // 如果纯API失败，优先采用"copy事件监听"方式，不产生选区/不插入DOM，避免页面抖动
       try {
-        const plainText = html.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
         await copyWithExecCommandViaListener(html, plainText);
         return true;
       } catch (_) {
         // 仍失败时，最后使用选区兜底（此路径才创建/插入容器）
         const container = createRichTextContainer(html, fontSettings);
-        container.style.cssText = `
-          position: fixed !important;
-          top: 0 !important;
-          left: 0 !important;
-          width: 1px !important;
-          height: 1px !important;
-          opacity: 0 !important;
-          overflow: hidden !important;
-          pointer-events: none !important;
-          z-index: -9999 !important;
-          visibility: hidden !important;
-          margin: 0 !important;
-          padding: 0 !important;
-          border: none !important;
-          outline: none !important;
-          transform: translate(-9999px, -9999px) !important;
-          display: block !important;
-        `;
+        // 使用统一的离屏样式（clipboard 专用版本）
+        DOMUtils.applyOffscreenStyles(container, 'clipboard');
         document.body.appendChild(container);
         try {
-          const prevScrollX = window.scrollX;
-          const prevScrollY = window.scrollY;
-          const prevActive = document.activeElement;
+          // 使用 DOMUtils 保存和恢复状态
+          const scrollPos = DOMUtils.saveScrollPosition();
+          const prevActive = DOMUtils.saveActiveElement();
 
-          const range = document.createRange();
-          range.selectNodeContents(container);
-          const selection = window.getSelection();
-          selection.removeAllRanges();
-          selection.addRange(range);
+          // 使用 DOMUtils 创建选区
+          DOMUtils.createSelection(container);
 
           try {
             copyWithExecCommand();
           } finally {
-            selection.removeAllRanges();
-            if (typeof window.scrollTo === 'function') window.scrollTo(prevScrollX, prevScrollY);
-            try { prevActive?.focus?.(); } catch (_) {}
+            DOMUtils.clearSelection();
+            DOMUtils.restoreScrollPosition(scrollPos);
+            DOMUtils.restoreActiveElement(prevActive);
           }
           return true;
         } finally {
-          if (document.body.contains(container)) {
-            document.body.removeChild(container);
-          }
+          DOMUtils.safeRemove(container);
         }
       }
     };

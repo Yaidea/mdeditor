@@ -27,7 +27,7 @@
           :key="option.value || index"
           class="dropdown-item"
           :class="{
-            'dropdown-item-active': option.value === selectedValue,
+            'dropdown-item-active': showSelection && option.value === selectedValue,
             'dropdown-item-disabled': option.disabled
           }"
           @click="selectOption(option)"
@@ -41,7 +41,7 @@
               <path v-else fill="currentColor" :d="option.icon"/>
             </svg>
             <span class="dropdown-item-text">{{ option.label }}</span>
-            <svg v-if="option.value === selectedValue" class="dropdown-item-check" viewBox="0 0 24 24" width="16" height="16">
+            <svg v-if="showSelection && option.value === selectedValue" class="dropdown-item-check" viewBox="0 0 24 24" width="16" height="16">
               <path fill="currentColor" d="M9,20.42L2.79,14.21L5.62,11.38L9,14.77L18.88,4.88L21.71,7.71L9,20.42Z"/>
             </svg>
           </div>
@@ -52,7 +52,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 
 // Props
 const props = defineProps({
@@ -89,6 +89,10 @@ const props = defineProps({
   triggerViewBox: {
     type: String,
     default: '0 0 24 24'
+  },
+  showSelection: {
+    type: Boolean,
+    default: true
   }
 })
 
@@ -98,7 +102,18 @@ const emit = defineEmits(['update:modelValue', 'select'])
 // Reactive data
 const isOpen = ref(false)
 const dropdownRef = ref(null)
-const selectedValue = ref(props.modelValue)
+const normalizeValue = (value) => {
+  if (value && typeof value === 'object' && 'value' in value) {
+    return value.value
+  }
+  return value
+}
+
+const shouldEmitObject = (value) => {
+  return value && typeof value === 'object' && !Array.isArray(value)
+}
+
+const selectedValue = ref(normalizeValue(props.modelValue))
 
 // Methods
 const toggleDropdown = () => {
@@ -110,8 +125,8 @@ const toggleDropdown = () => {
 const selectOption = (option) => {
   if (option.disabled) return
 
-  selectedValue.value = option.value
-  emit('update:modelValue', option.value)
+  selectedValue.value = props.showSelection ? option.value : null
+  emit('update:modelValue', shouldEmitObject(props.modelValue) ? option : option.value)
   emit('select', option)
   isOpen.value = false
 }
@@ -142,6 +157,20 @@ onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
   document.removeEventListener('keydown', handleEscape)
 })
+
+watch(
+  () => props.modelValue,
+  (newVal) => {
+    selectedValue.value = props.showSelection ? normalizeValue(newVal) : null
+  }
+)
+
+watch(
+  () => props.showSelection,
+  (enabled) => {
+    selectedValue.value = enabled ? normalizeValue(props.modelValue) : null
+  }
+)
 </script>
 
 <style scoped>

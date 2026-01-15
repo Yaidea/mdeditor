@@ -1,7 +1,7 @@
 /**
  * @file tests/core/markdown/breeze-styler.test.js
  */
-import { wrapWithFontStyles, SocialStyler } from '../../../src/core/markdown/post-processors/social-styler.js'
+import { wrapWithFontStyles, SocialStyler } from '../../../src/core/markdown/social-adapters.js'
 
 const fontSettings = { fontFamily: 'microsoft-yahei', fontSize: 16, lineHeight: 1.6 }
 

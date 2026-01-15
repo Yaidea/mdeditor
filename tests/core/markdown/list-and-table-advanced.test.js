@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { parseMarkdown } from '../../../src/core/markdown/parser/coordinator.js'
+import { parseMarkdown } from '../../../src/core/markdown/index.js'
 
 describe('复杂列表与表格', () => {
   it('支持两层嵌套的无序列表与任务列表混排', () => {

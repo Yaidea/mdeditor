@@ -44,6 +44,7 @@ export function useEditorState(initialValue = '') {
 
   /**
    * 检查编辑器是否已初始化
+   * @returns {import('vue').ComputedRef<boolean>} 是否已初始化的计算属性
    */
   const isInitialized = computed(() => editorView !== null);
 

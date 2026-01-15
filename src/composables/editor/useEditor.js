@@ -10,7 +10,7 @@
  * 2.  **响应式内容**: `content` ref 双向绑定编辑器内容。
  * 3.  **主题集成**: 通过 `useGlobalThemeManager` 与全局主题系统联动，
  *     自动根据当前颜色主题（亮/暗）切换 CodeMirror 的基础主题。
- * 4.  **工具栏操作**: 封装了 `editor-operations.js` 中的原子操作，
+ * 4.  **工具栏操作**: 封装了 `operations.js` 中的原子操作，
  *     提供如加粗、插入链接等易于调用的方法。
  * 5.  **滚动同步**: 监听编辑器的滚动事件，并以百分比形式通知父组件，
  *     用于实现编辑器与预览窗格的同步滚动。
@@ -24,13 +24,14 @@
  * - **模块化**: 通过组合多个小的 composables 实现复杂功能，提高代码的可维护性。
  */
 
+import { watch } from 'vue'
+
 // 导入拆分后的 composables
 import { useEditorState } from './useEditorState.js'
 import { useEditorEvents } from './useEditorEvents.js'
 import { useEditorTheme } from './useEditorTheme.js'
 import { useEditorOperations } from './useEditorOperations.js'
 import { useEditorLifecycle } from './useEditorLifecycle.js'
-import { useThemeWatcher } from '../theme/useThemeWatcher.js'
 
 /**
  * 创建并管理一个 Markdown 编辑器实例。
@@ -65,14 +66,10 @@ export function useMarkdownEditor(options = {}) {
     editorTheme
   })
 
-  // 使用主题监听器
-  const themeWatcher = useThemeWatcher({
-    editorTheme,
-    reinitEditor: editorLifecycle.reinitEditor
-  }, theme)
-
-  // 设置主题监听
-  const watchers = themeWatcher.setupThemeWatchers()
+  // 监听主题变化，自动重新初始化编辑器
+  const stopThemeWatcher = watch(editorTheme.currentTheme, () => {
+    editorLifecycle.reinitEditor()
+  })
 
   // --- 返回 API ---
 
@@ -92,16 +89,13 @@ export function useMarkdownEditor(options = {}) {
     reinitEditor: editorLifecycle.reinitEditor,
     updateContent: editorLifecycle.updateContent,
 
-    // 来自 themeWatcher 的主题控制方法
-    forceThemeUpdate: themeWatcher.forceThemeUpdate,
-
     // 来自 editorOperations 的工具栏操作
     ...editorOperations,
 
     // 实例访问 (用于高级操作)
     getEditorView: editorState.getEditorView,
 
-    // 清理方法（用于手动清理时使用）
-    cleanup: () => themeWatcher.cleanupWatchers(watchers)
+    // 清理方法
+    cleanup: stopThemeWatcher
   }
 }

@@ -71,7 +71,7 @@ export function useEditorLifecycle({ editorState, editorEvents, editorTheme }) {
       markdown(),
       ...indentConfig,
       updateListener,
-      ...editorTheme.getEditorExtensions(updateListener)
+      ...editorTheme.getEditorExtensions()
     ];
 
     // 启用软换行，避免横向滚动条
@@ -128,17 +128,22 @@ export function useEditorLifecycle({ editorState, editorEvents, editorTheme }) {
    */
   const updateContent = (newValue) => {
     const editorView = editorState.getEditorView();
-    if (newValue !== editorState.content.value && editorView) {
-      const transaction = editorView.state.update({
-        changes: {
-          from: 0,
-          to: editorView.state.doc.length,
-          insert: newValue
-        }
-      });
-      editorView.dispatch(transaction);
-      // content.value 会在 updateListener 中被更新，这里无需重复设置
+    if (newValue === editorState.content.value) return;
+
+    if (!editorView) {
+      editorState.updateContent(newValue);
+      return;
     }
+
+    const transaction = editorView.state.update({
+      changes: {
+        from: 0,
+        to: editorView.state.doc.length,
+        insert: newValue
+      }
+    });
+    editorView.dispatch(transaction);
+    // content.value 会在 updateListener 中被更新，这里无需重复设置
   };
 
   // 生命周期钩子

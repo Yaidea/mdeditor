@@ -126,8 +126,9 @@
 </template>
 
 <script setup>
-import { ref, watch, nextTick, onMounted, onUnmounted } from "vue";
+import { ref } from "vue";
 import { useSettingsPanel } from "../composables/useSettingsPanel.js";
+import { useScrollNavigation } from "../composables/useScrollNavigation.js";
 import SettingsHeader from "./settings/SettingsHeader.vue";
 import SettingsFooter from "./settings/SettingsFooter.vue";
 import ThemeSystemSection from "./settings/ThemeSystemSection.vue";
@@ -190,11 +191,8 @@ const {
   applySettings,
 } = useSettingsPanel(props, emit);
 
-// 导航相关状态
-const activeSection = ref("theme-system");
-
 // 导航配置
-const navigationSections = ref([
+const navigationSections = [
   {
     id: "theme-system",
     labelKey: 'settings.nav.themeSystem',
@@ -243,90 +241,15 @@ const navigationSections = ref([
       path: "M3 11h18v2H3v-2m6-6h6v2H9V5m0 14h6v2H9v-2",
     },
   },
-]);
+];
 
-// 滚动到指定区域
-const scrollToSection = (sectionId) => {
-  const element = document.getElementById(sectionId);
-  if (element) {
-    element.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-      inline: "nearest",
-    });
-    activeSection.value = sectionId;
-  }
-};
-
-// 监听滚动事件，更新当前激活的导航项
-const handleScroll = () => {
-  const sections = navigationSections.value.map((section) => section.id);
-  const scrollContainer = document.querySelector(".settings-content-area");
-
-  if (!scrollContainer) return;
-
-  const containerHeight = scrollContainer.clientHeight;
-
-  for (const sectionId of sections) {
-    const element = document.getElementById(sectionId);
-    if (element) {
-      const rect = element.getBoundingClientRect();
-      const containerRect = scrollContainer.getBoundingClientRect();
-      const relativeTop = rect.top - containerRect.top;
-
-      // 如果元素在视口的上半部分，则认为是当前激活的区域
-      if (
-        relativeTop <= containerHeight / 3 &&
-        relativeTop >= -rect.height / 2
-      ) {
-        activeSection.value = sectionId;
-        break;
-      }
-    }
-  }
-};
-
-// 直接定位到当前激活区域（复用导航点击的精确定位逻辑）
-const jumpToActiveSection = () => {
-  const element = document.getElementById(activeSection.value);
-  if (element) {
-    // 使用与导航点击相同的 scrollIntoView 方法，但不使用平滑滚动
-    element.scrollIntoView({
-      behavior: "auto", // 使用 'auto' 而不是 'smooth'，实现瞬间定位
-      block: "start", // 与导航点击保持一致的定位方式
-      inline: "nearest", // 与导航点击保持一致的定位方式
-    });
-  }
-};
-
-// 监听面板可见性变化，立即设置滚动位置
-watch(
-  () => props.visible,
-  (newVisible, oldVisible) => {
-    if (newVisible && !oldVisible) {
-      // 面板从隐藏变为显示时，立即设置滚动位置
-      // 使用 nextTick 确保DOM已渲染完成
-      nextTick(() => {
-        jumpToActiveSection();
-      });
-    }
-  },
-  { flush: "post" }
-); // 使用 post 确保在DOM更新后执行
-
-// 生命周期钩子
-onMounted(() => {
-  const scrollContainer = document.querySelector(".settings-content-area");
-  if (scrollContainer) {
-    scrollContainer.addEventListener("scroll", handleScroll);
-  }
-});
-
-onUnmounted(() => {
-  const scrollContainer = document.querySelector(".settings-content-area");
-  if (scrollContainer) {
-    scrollContainer.removeEventListener("scroll", handleScroll);
-  }
+// 使用滚动导航 composable
+const { activeSection, scrollToSection } = useScrollNavigation({
+  containerSelector: ".settings-content-area",
+  sections: navigationSections,
+  defaultSection: "theme-system",
+  scrollDebounceMs: 500,
+  getVisible: () => props.visible
 });
 
 // 暴露方法给父组件

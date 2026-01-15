@@ -18,7 +18,7 @@ npm run dev              # 启动开发服务器 (端口 3000)
 npm run build            # 生产构建
 npm run preview          # 预览构建输出
 
-# 测试 (151 个测试用例)
+# 测试 (354 个测试用例)
 npm run test             # 监听模式
 npm run test:run         # 单次运行 (CI)
 npm run test:coverage    # 覆盖率报告 (阈值 80%)
@@ -39,7 +39,7 @@ npm run make:linux       # Linux (DEB + RPM)
 src/
 ├── components/          # Vue 组件
 │   ├── layout/          # AppHeader, AppMain, AppFooter
-│   ├── settings/        # 6 个设置分区组件
+│   ├── settings/        # 8 个设置分区组件
 │   ├── MarkdownEditor   # CodeMirror 源码编辑器
 │   ├── WysiwygPane      # Milkdown 所见即所得编辑器
 │   └── PreviewPane      # HTML 预览面板
@@ -56,6 +56,7 @@ src/
 ├── config/              # 配置常量 + toolbar.js
 ├── plugins/             # i18n, Prism 高亮, Mermaid
 ├── locales/             # zh-CN, en
+├── shared/              # 公共工具函数 (composables, utils)
 └── styles/              # 全局样式 + 主题 CSS
 
 electron/                # Electron 主进程 + 模块
@@ -75,10 +76,10 @@ tests/                   # 镜像 src 结构的测试文件
 ```text
 原始 Markdown
     ↓
-Parser Coordinator (8 个策略: code-block, list, table, blockquote-end,
-                    empty-line, paragraph, line-processor, base)
+Parser Coordinator (9 个策略: base, blockquote-end, code-block, empty-line,
+                    line-processor, list, paragraph, table)
     ↓
-Formatter Coordinator (code, link, text, escape, special, legacy)
+Formatter Coordinator (code, escape, legacy, link, special, style, text)
     ↓
 Processors (FontProcessor, ThemeProcessor)
     ↓

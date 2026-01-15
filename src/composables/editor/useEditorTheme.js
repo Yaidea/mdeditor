@@ -66,13 +66,11 @@ export function useEditorTheme(theme = 'auto') {
 
   /**
    * 获取编辑器扩展数组
-   * @param {Function} updateListener - 更新监听器
    * @returns {Array} 扩展数组
    */
-  const getEditorExtensions = (updateListener) => {
+  const getEditorExtensions = () => {
     const extensions = [
-      getEditorTheme(),
-      updateListener
+      getEditorTheme()
     ];
 
     if (currentTheme.value === 'dark') {

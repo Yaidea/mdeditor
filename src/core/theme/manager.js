@@ -131,33 +131,6 @@ class CSSVariableManager {
   }
 
   /**
-   * 将十六进制颜色转换为RGB对象
-   * @private
-   * @param {string} hex - 十六进制颜色值 (如 #00A86B)
-   * @returns {Object|null} RGB对象 {r, g, b} 或 null
-   */
-  _hexToRgb(hex) {
-    // 移除 # 符号
-    const cleanHex = hex.replace('#', '');
-
-    // 支持3位和6位十六进制
-    let r, g, b;
-    if (cleanHex.length === 3) {
-      r = parseInt(cleanHex[0] + cleanHex[0], 16);
-      g = parseInt(cleanHex[1] + cleanHex[1], 16);
-      b = parseInt(cleanHex[2] + cleanHex[2], 16);
-    } else if (cleanHex.length === 6) {
-      r = parseInt(cleanHex.slice(0, 2), 16);
-      g = parseInt(cleanHex.slice(2, 4), 16);
-      b = parseInt(cleanHex.slice(4, 6), 16);
-    } else {
-      return null;
-    }
-
-    return { r, g, b };
-  }
-
-  /**
    * 检查主题是否已经应用，避免重复设置
    * @private
    * @param {Object} theme - 主题对象

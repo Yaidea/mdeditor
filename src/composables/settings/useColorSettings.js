@@ -9,6 +9,8 @@
  */
 
 import { ref, computed } from 'vue'
+import { SafeStorage, TEMP_STORAGE_KEYS } from '../../shared/utils/storage.js'
+import { ColorUtils } from '../../shared/utils/color.js'
 
 /**
  * 颜色设置 Composable
@@ -28,27 +30,12 @@ export function useColorSettings(themeManager, emit) {
   const isCustomColorActive = computed(() => isUsingCustomColor.value)
 
   /**
-   * 调整颜色亮度
+   * 调整颜色亮度（使用 ColorUtils）
    * @param {string} color - 十六进制颜色值
    * @param {number} factor - 亮度因子 (0-2)
    * @returns {string} 调整后的颜色
    */
-  const adjustColorBrightness = (color, factor) => {
-    if (!color) return color
-
-    // 处理十六进制颜色
-    if (color.startsWith('#')) {
-      const hex = color.slice(1)
-      const num = parseInt(hex, 16)
-      // 使用 Math.min(255, ...) 防止颜色值溢出
-      const r = Math.min(255, Math.round((num >> 16) * factor))
-      const g = Math.min(255, Math.round(((num >> 8) & 0x00FF) * factor))
-      const b = Math.min(255, Math.round((num & 0x0000FF) * factor))
-      return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`
-    }
-
-    return color
-  }
+  const adjustColorBrightness = (color, factor) => ColorUtils.adjustBrightness(color, factor)
 
   /**
    * 切换颜色选择器显示状态
@@ -108,13 +95,9 @@ export function useColorSettings(themeManager, emit) {
         clearThemeSelection()
       }
 
-      // 保存到localStorage以便刷新后恢复
-      try {
-        localStorage.setItem('temp-custom-color', color)
-        localStorage.setItem('temp-custom-theme', JSON.stringify(customTheme))
-      } catch (error) {
-        console.warn('Failed to save custom color to localStorage:', error)
-      }
+      // 保存到localStorage以便刷新后恢复（使用 SafeStorage）
+      SafeStorage.set(TEMP_STORAGE_KEYS.CUSTOM_COLOR, color)
+      SafeStorage.setJson(TEMP_STORAGE_KEYS.CUSTOM_THEME, customTheme)
 
       // 设置临时主题标记
       if (themeManager.themeState) {
@@ -147,33 +130,25 @@ export function useColorSettings(themeManager, emit) {
     let initialIsUsingCustomColor = false
     let selectedThemeId = currentColorThemeId
 
-    // 检查是否有临时自定义主题
-    try {
-      const tempTheme = localStorage.getItem('temp-custom-theme')
-      const tempColor = localStorage.getItem('temp-custom-color')
+    // 检查是否有临时自定义主题（使用 SafeStorage）
+    const tempTheme = SafeStorage.getJson(TEMP_STORAGE_KEYS.CUSTOM_THEME, null)
+    const tempColor = SafeStorage.get(TEMP_STORAGE_KEYS.CUSTOM_COLOR, '')
 
-      if (tempTheme && tempColor) {
-        // 有自定义主题，设置自定义状态
-        currentCustomTheme.value = JSON.parse(tempTheme)
-        currentCustomColor.value = tempColor
-        selectedCustomColor.value = tempColor // 同步选中的自定义颜色
-        isUsingCustomColor.value = true
-        selectedThemeId = null // 清除内置主题选择
-        // 记录初始自定义颜色状态
-        initialCustomColor = tempColor
-        initialIsUsingCustomColor = true
-      } else {
-        // 没有自定义主题，使用内置主题
-        isUsingCustomColor.value = false
-        currentCustomTheme.value = null
-        // 记录初始状态
-        initialIsUsingCustomColor = false
-      }
-    } catch (error) {
-      console.warn('Failed to restore custom theme state:', error)
-      // 出错时使用内置主题
+    if (tempTheme && tempColor) {
+      // 有自定义主题，设置自定义状态
+      currentCustomTheme.value = tempTheme
+      currentCustomColor.value = tempColor
+      selectedCustomColor.value = tempColor // 同步选中的自定义颜色
+      isUsingCustomColor.value = true
+      selectedThemeId = null // 清除内置主题选择
+      // 记录初始自定义颜色状态
+      initialCustomColor = tempColor
+      initialIsUsingCustomColor = true
+    } else {
+      // 没有自定义主题，使用内置主题
       isUsingCustomColor.value = false
       currentCustomTheme.value = null
+      // 记录初始状态
       initialIsUsingCustomColor = false
     }
 
@@ -191,17 +166,12 @@ export function useColorSettings(themeManager, emit) {
     isUsingCustomColor.value = false
     currentCustomTheme.value = null
 
-    // 清除临时自定义颜色和标记
-    try {
-      localStorage.removeItem('temp-custom-color')
-      localStorage.removeItem('temp-custom-theme')
+    // 清除临时自定义颜色和标记（使用 SafeStorage）
+    SafeStorage.removeAll([TEMP_STORAGE_KEYS.CUSTOM_COLOR, TEMP_STORAGE_KEYS.CUSTOM_THEME])
 
-      // 清除临时主题标记
-      if (themeManager.themeState) {
-        themeManager.themeState.hasTemporaryCustomTheme = false
-      }
-    } catch (error) {
-      console.warn('Failed to clear custom color from localStorage:', error)
+    // 清除临时主题标记
+    if (themeManager.themeState) {
+      themeManager.themeState.hasTemporaryCustomTheme = false
     }
   }
 

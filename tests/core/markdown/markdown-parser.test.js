@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { MarkdownParser } from '../../../src/core/markdown/parser/core/MarkdownParser.js'
-import { parseMarkdown } from '../../../src/core/markdown/parser/coordinator.js'
+import { MarkdownParser, parseMarkdown } from '../../../src/core/markdown/index.js'
 
 const mdSample = `# 标题一\n\n- 列表项\n\n| A | B |\n|---|---|\n| 1 | 2 |\n\n> 引用一行`;
 

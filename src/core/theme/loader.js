@@ -1,5 +1,5 @@
 /**
- * @file src/core/theme/theme-loader.js
+ * @file src/core/theme/loader.js
  * @description 主题预加载器，用于防止主题闪烁 (FOUC)
  *
  * 该脚本应在 `index.html` 的 `<head>` 中、在主应用脚本加载前以内联方式或同步加载。
@@ -14,7 +14,7 @@
  * 注意：此脚本是独立的，不依赖任何外部模块，以确保最快的执行速度。
  */
 
-(function () {
+export function loadThemeEarly() {
   // 预设颜色主题的最小化版本，确保脚本独立性
   const colorThemePresets = {
     chijin: { primary: '#FF0097', primaryHover: '#E60087', primaryLight: 'rgba(255, 0, 151, 0.08)', primaryDark: '#CC0077', inlineCodeBg: 'rgba(255, 0, 151, 0.08)', inlineCodeText: '#CC0077', inlineCodeBorder: 'rgba(255, 0, 151, 0.15)' },
@@ -103,4 +103,7 @@
     applyTheme(DEFAULT_THEME_ID);
     console.error('Failed to load theme from localStorage:', e);
   }
-})();
+}
+
+// Keep side-effect behavior for existing direct imports.
+loadThemeEarly();

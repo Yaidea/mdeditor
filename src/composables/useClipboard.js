@@ -13,6 +13,7 @@ import { ref, watch, onUnmounted } from 'vue'
 import { copySocialFormat, copyMarkdownFormat, getCopyFormatOptions } from '../core/editor/copy-formats.js'
 import { useGlobalThemeManager } from './index.js'
 import { i18n } from '../plugins/i18n.js'
+import { SafeStorage, TEMP_STORAGE_KEYS } from '../shared/utils/storage.js'
 
 /**
  * 剪贴板功能管理 Composable
@@ -36,15 +37,9 @@ export function useClipboard(options = {}) {
    * @returns {Object} 当前有效的主题配置
    */
   const getCurrentEffectiveTheme = () => {
-    try {
-      const tempTheme = localStorage.getItem('temp-custom-theme')
-      if (tempTheme) {
-        return JSON.parse(tempTheme)
-      }
-    } catch (error) {
-      console.warn('Failed to load temp custom theme:', error)
-    }
-    return themeManager.currentColorTheme.value
+    // 使用 SafeStorage 获取临时自定义主题
+    const tempTheme = SafeStorage.getJson(TEMP_STORAGE_KEYS.CUSTOM_THEME, null)
+    return tempTheme || themeManager.currentColorTheme.value
   }
 
   /**
@@ -71,8 +66,29 @@ export function useClipboard(options = {}) {
         fontSettings: themeManager.currentFontSettings.value
       }
 
+      // 从可能嵌套的响应式对象中提取格式值
+      const resolveFormatValue = (input, depth = 0) => {
+        // 防止无限递归
+        if (depth > 5 || !input) return null
+        if (typeof input === 'string') return input
+        if (typeof input === 'object') {
+          // 如果 value 是字符串，直接返回
+          if (typeof input.value === 'string') return input.value
+          // 如果 value 是对象，递归解包
+          if (input.value && typeof input.value === 'object') {
+            return resolveFormatValue(input.value, depth + 1)
+          }
+          // 尝试通过 label 匹配
+          if (typeof input.label === 'string') {
+            const matched = copyFormatOptions.value.find(option => option.label === input.label)
+            return matched?.value || null
+          }
+        }
+        return null
+      }
+
       // 如果没有指定格式，默认使用社交格式
-      const formatValue = format.value || 'social'
+      const formatValue = resolveFormatValue(format) || 'social'
 
       switch (formatValue) {
         case 'social':
@@ -91,7 +107,7 @@ export function useClipboard(options = {}) {
       }, 50)
     } catch (error) {
       setTimeout(() => {
-        onNotify?.('❌ 复制失败：' + error.message, 'error')
+        onNotify?.('❌ 复制失败: ' + error.message, 'error')
       }, 50)
     }
   }

@@ -13,6 +13,12 @@ import {
   insertOrderedList,
   insertLink,
   insertImage,
+  insertItalic,
+  insertStrikethrough,
+  insertQuote,
+  insertTable,
+  insertHorizontalRule,
+  insertText,
 } from '../../../src/core/editor/operations.js'
 
 // 轻量级假 EditorView，模拟必要的 state/dispatch/focus 行为
@@ -104,4 +110,86 @@ describe('editor operations: 插入与选区', () => {
     expect(ev3.getText()).toMatch(/^!\[[^\]]*\]\(https:\/\/\)/)
   })
 
+describe('editor operations: 更多操作', () => {
+  it('insertItalic：无选区时应插入斜体占位符', () => {
+    const ev = createFakeEditor('', 0, 0)
+    insertItalic(ev)
+    expect(ev.getText()).toMatch(/\*[^*]+\*/)
+    expect(ev.getText()).not.toContain('**')
+  })
+
+  it('insertItalic：有选区时应包裹已选中文本', () => {
+    const ev = createFakeEditor('hello', 0, 5)
+    insertItalic(ev)
+    expect(ev.getText()).toBe('*hello*')
+  })
+
+  it('insertStrikethrough：无选区时应插入删除线占位符', () => {
+    const ev = createFakeEditor('', 0, 0)
+    insertStrikethrough(ev)
+    expect(ev.getText()).toContain('~~')
+  })
+
+  it('insertStrikethrough：有选区时应包裹已选中文本', () => {
+    const ev = createFakeEditor('removed', 0, 7)
+    insertStrikethrough(ev)
+    expect(ev.getText()).toBe('~~removed~~')
+  })
+
+  it('insertQuote：应插入引用前缀', () => {
+    const ev = createFakeEditor('', 0, 0)
+    insertQuote(ev)
+    expect(ev.getText().startsWith('> ')).toBe(true)
+  })
+
+  it('insertTable：应插入表格 Markdown 模板', () => {
+    const ev = createFakeEditor('', 0, 0)
+    insertTable(ev)
+    const text = ev.getText()
+    expect(text).toContain('|')
+    expect(text).toContain('---')
+  })
+
+  it('insertTable：应支持指定行列数', () => {
+    const ev = createFakeEditor('', 0, 0)
+    insertTable(ev, 4, 4)
+    const text = ev.getText()
+    // 表头 + 分隔符 + 3 行数据
+    const rowCount = text.split('\n').filter(line => line.includes('|')).length
+    expect(rowCount).toBeGreaterThanOrEqual(4)
+  })
+
+  it('insertHorizontalRule：应插入分割线', () => {
+    const ev = createFakeEditor('', 0, 0)
+    insertHorizontalRule(ev)
+    expect(ev.getText()).toContain('---')
+  })
+
+  it('insertHeading：默认级别为 2', () => {
+    const ev = createFakeEditor('', 0, 0)
+    insertHeading(ev)
+    expect(ev.getText().startsWith('## ')).toBe(true)
+  })
+
+  it('insertHeading：级别边界验证（超出范围时 clamp）', () => {
+    const ev1 = createFakeEditor('', 0, 0)
+    insertHeading(ev1, 0) // 小于最小值
+    expect(ev1.getText().startsWith('# ')).toBe(true) // clamp to 1
+
+    const ev2 = createFakeEditor('', 0, 0)
+    insertHeading(ev2, 10) // 大于最大值
+    expect(ev2.getText().startsWith('###### ')).toBe(true) // clamp to 6
+  })
+
+  it('insertCodeBlock：默认语言应为空字符串', () => {
+    const ev = createFakeEditor('', 0, 0)
+    insertCodeBlock(ev, '')
+    expect(ev.getText()).toContain('```\n')
+  })
+
+  it('insertText：editorView 为 null 时应安全返回', () => {
+    // 不应抛出异常
+    expect(() => insertText(null, '**', '**', '粗体')).not.toThrow()
+  })
+})
 

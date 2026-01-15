@@ -5,6 +5,8 @@
  * 专门处理代码块的语法高亮，支持多种编程语言和主题。
  */
 
+import { defaultColorTheme, getCodeStyle } from '../../config/theme-presets.js';
+
 /**
  * 语言别名映射
  */
@@ -195,4 +197,251 @@ export function highlightCode(code, language, codeTheme) {
   });
 
   return result;
+}
+
+/**
+ * 格式化代码块，包含语法高亮和主题样式
+ * @param {string} content - 代码内容
+ * @param {string} language - 编程语言
+ * @param {object} [_unusedTheme=defaultColorTheme] - （兼容保留，未使用）颜色主题对象
+ * @param {object|null} [codeTheme=null] - 代码样式主题对象
+ * @param {boolean} [isPreview=false] - 是否为预览模式
+ * @param {number} [baseFontSize=16] - 基础字号
+ * @returns {string} - 格式化后的代码块 HTML 字符串
+ */
+export function formatCodeBlock(content, language, _unusedTheme = defaultColorTheme, codeTheme = null, isPreview = false, baseFontSize = 16) {
+  const trimmedContent = (content || '').trim();
+  // Mermaid: keep raw block to avoid breaking diagram syntax
+  const lang = (language || '').toString().trim().toLowerCase();
+  if (lang === 'mermaid') {
+    const escaped = trimmedContent
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+    const blockMargin = `${Math.max(8, Math.round(baseFontSize))}px`;
+    return `<div class="mermaid-block" style="margin: ${blockMargin} 0; line-height: 0; font-size: 0;"><div class="mermaid">${escaped}</div></div>`;
+  }
+
+  const safeCodeTheme = codeTheme || getCodeStyle('mac');
+  const highlightedContent = highlightCode(trimmedContent, language, safeCodeTheme);
+  const contentForCopy = highlightedContent;
+  const imp = !isPreview ? '!important' : '';
+  const codeFontSize = 14;
+
+  const preStyle = `
+    background: ${safeCodeTheme.background} ${imp};
+    border-radius: 12px ${imp};
+    ${safeCodeTheme.hasHeader ? `padding: 0 ${imp};` : `padding: 24px ${imp};`}
+    overflow: hidden ${imp};
+    font-size: ${codeFontSize}px ${imp};
+    line-height: 1.3 ${imp};
+    border: none ${imp};
+    position: relative ${imp};
+    font-family: Consolas, monospace ${imp};
+    margin: 32px 0 ${imp};
+    font-weight: 400 ${imp};
+    color: ${safeCodeTheme.color} ${imp};
+    box-sizing: border-box ${imp};
+    display: block ${imp};
+    color-scheme: light ${imp};
+    min-height: auto ${imp};
+    height: auto ${imp};
+    max-height: none ${imp};
+    ${!isPreview ? 'vertical-align: top !important;' : ''}
+  `.replace(/\s+/g, ' ').trim();
+
+  const scrollAreaStyle = `
+    overflow-x: auto ${imp};
+    overflow-y: hidden ${imp};
+    width: 100% ${imp};
+    color-scheme: light ${imp};
+    box-sizing: border-box ${imp};
+    ${safeCodeTheme.hasHeader ? `padding: 12px 24px 20px 24px ${imp};` : `padding: 24px ${imp};`}
+    -webkit-overflow-scrolling: touch ${imp};
+  `.replace(/\s+/g, ' ').trim();
+
+  const codeStyle = `
+    background: transparent ${imp};
+    border: none ${imp};
+    font-family: Consolas, monospace ${imp};
+    font-size: ${codeFontSize}px ${imp};
+    line-height: 1.3 ${imp};
+    color: ${safeCodeTheme.color} ${imp};
+    display: block ${imp};
+    width: 100% ${imp};
+    overflow-x: auto ${imp};
+    overflow-y: hidden ${imp};
+    color-scheme: light ${imp};
+    -webkit-overflow-scrolling: touch ${imp};
+    white-space: pre ${imp};
+    text-indent: 0 ${imp};
+    word-spacing: normal ${imp};
+    letter-spacing: normal ${imp};
+    margin: 0 ${imp};
+    padding: 0 ${imp};
+    box-sizing: border-box ${imp};
+    min-height: auto ${imp};
+    height: auto ${imp};
+    max-height: none ${imp};
+    ${!isPreview ? 'vertical-align: top !important;' : ''}
+  `.replace(/\s+/g, ' ').trim();
+
+  const expanderStyle = `
+    display: inline-block !important;
+    min-width: max-content !important;
+    width: auto !important;
+    max-width: none !important;
+  `.replace(/\s+/g, ' ').trim();
+
+  const codeStyleCopy = `
+    background: transparent ${!isPreview ? '!important' : ''};
+    border: none ${!isPreview ? '!important' : ''};
+    font-family: Consolas, monospace ${!isPreview ? '!important' : ''};
+    font-size: ${codeFontSize}px ${!isPreview ? '!important' : ''};
+    line-height: 1.3 ${!isPreview ? '!important' : ''};
+    color: ${safeCodeTheme.color} ${!isPreview ? '!important' : ''};
+    display: inline-block ${!isPreview ? '!important' : ''};
+    width: auto ${!isPreview ? '!important' : ''};
+    max-width: none ${!isPreview ? '!important' : ''};
+    white-space: pre ${!isPreview ? '!important' : ''};
+    word-spacing: normal ${!isPreview ? '!important' : ''};
+    letter-spacing: normal ${!isPreview ? '!important' : ''};
+    -webkit-overflow-scrolling: touch ${!isPreview ? '!important' : ''};
+    text-indent: 0 ${!isPreview ? '!important' : ''};
+    margin: 0 ${!isPreview ? '!important' : ''};
+    padding: 0 ${!isPreview ? '!important' : ''};
+    box-sizing: border-box ${!isPreview ? '!important' : ''};
+    vertical-align: top ${!isPreview ? '!important' : ''};
+  `.replace(/\s+/g, ' ').trim();
+
+  let headerElement = '';
+  const defaultLabel = '\u4ee3\u7801';
+
+  if (safeCodeTheme.hasHeader) {
+    let headerContent;
+
+    if (safeCodeTheme.id === 'mac') {
+      const trafficLightSize = 12;
+      const labelSize = Math.max(11, Math.round(baseFontSize * 0.75));
+      const spacing = 6;
+      headerContent = `<span class="mac-traffic-light-red" style="color: #ff5f56 !important; margin-right: ${spacing}px !important; font-size: ${trafficLightSize}px !important; line-height: 1 !important; display: inline !important; width: auto !important; height: auto !important;">\u25cf</span><span class="mac-traffic-light-yellow" style="color: #ffbd2e !important; margin-right: ${spacing}px !important; font-size: ${trafficLightSize}px !important; line-height: 1 !important; display: inline !important; width: auto !important; height: auto !important;">\u25cf</span><span class="mac-traffic-light-green" style="color: #27ca3f !important; margin-right: ${spacing * 2}px !important; font-size: ${trafficLightSize}px !important; line-height: 1 !important; display: inline !important; width: auto !important; height: auto !important;">\u25cf</span><span class="mac-code-label" style="font-size: ${labelSize}px !important; color: #8b949e !important; line-height: 1 !important; display: inline !important;">${language || 'code'}</span>`;
+    } else {
+      headerContent = safeCodeTheme.headerContent.replace(defaultLabel, language || defaultLabel);
+    }
+
+    let protectedHeaderStyle = !isPreview
+      ? safeCodeTheme.headerStyle.replace(/line-height:\s*[\d.]+;?/g, 'line-height: 1.2 !important;') + ' min-height: auto !important; height: auto !important;'
+      : safeCodeTheme.headerStyle;
+
+    if (safeCodeTheme.id === 'mac') {
+      const headerPadding = 12;
+      protectedHeaderStyle = protectedHeaderStyle.replace(/padding:\s*[^;]+;/g, `padding: ${headerPadding}px 20px;`);
+    }
+
+    headerElement = `
+      <div style="${protectedHeaderStyle}">
+        ${headerContent}
+      </div>
+    `.replace(/\s+/g, ' ').trim();
+  }
+
+  const syntaxProtectionCSS = safeCodeTheme.syntaxHighlight ? `
+    <style>
+      .syntax-keyword, .syntax-keyword font { color: ${safeCodeTheme.syntaxHighlight.keyword} !important; }
+      .syntax-string, .syntax-string font { color: ${safeCodeTheme.syntaxHighlight.string} !important; }
+      .syntax-comment, .syntax-comment font { color: ${safeCodeTheme.syntaxHighlight.comment} !important; }
+      .syntax-number, .syntax-number font { color: ${safeCodeTheme.syntaxHighlight.number} !important; }
+      .syntax-function, .syntax-function font { color: ${safeCodeTheme.syntaxHighlight.function} !important; }
+
+      [data-syntax="keyword"], [data-syntax="keyword"] font { color: ${safeCodeTheme.syntaxHighlight.keyword} !important; }
+      [data-syntax="string"], [data-syntax="string"] font { color: ${safeCodeTheme.syntaxHighlight.string} !important; }
+      [data-syntax="comment"], [data-syntax="comment"] font { color: ${safeCodeTheme.syntaxHighlight.comment} !important; }
+      [data-syntax="number"], [data-syntax="number"] font { color: ${safeCodeTheme.syntaxHighlight.number} !important; }
+      [data-syntax="function"], [data-syntax="function"] font { color: ${safeCodeTheme.syntaxHighlight.function} !important; }
+
+      .hljs.code__pre,
+      pre[style*="overflow-x: auto"] > div[style*="overflow-x: auto"],
+      div[style*="overflow-x: auto"] {
+        scrollbar-width: thin !important;
+        scrollbar-color: rgba(255, 255, 255, 0.3) transparent !important;
+      }
+
+      .hljs.code__pre::-webkit-scrollbar,
+      pre[style*="overflow-x: auto"] > div[style*="overflow-x: auto"]::-webkit-scrollbar,
+      div[style*="overflow-x: auto"]::-webkit-scrollbar {
+        height: 8px !important;
+        background: transparent !important;
+      }
+
+      .hljs.code__pre::-webkit-scrollbar-thumb,
+      pre[style*="overflow-x: auto"] > div[style*="overflow-x: auto"]::-webkit-scrollbar-thumb,
+      div[style*="overflow-x: auto"]::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.3) !important;
+        border-radius: 4px !important;
+        border: none !important;
+      }
+
+      .hljs.code__pre::-webkit-scrollbar-thumb:hover,
+      pre[style*="overflow-x: auto"] > div[style*="overflow-x: auto"]::-webkit-scrollbar-thumb:hover,
+      div[style*="overflow-x: auto"]::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.5) !important;
+      }
+
+      .hljs.code__pre::-webkit-scrollbar-track,
+      pre[style*="overflow-x: auto"] > div[style*="overflow-x: auto"]::-webkit-scrollbar-track,
+      div[style*="overflow-x: auto"]::-webkit-scrollbar-track {
+        background: transparent !important;
+      }
+    </style>
+  ` : `
+    <style>
+      .hljs.code__pre,
+      pre[style*="overflow-x: auto"] > div[style*="overflow-x: auto"],
+      div[style*="overflow-x: auto"] {
+        scrollbar-width: thin !important;
+        scrollbar-color: rgba(255, 255, 255, 0.3) transparent !important;
+      }
+
+      .hljs.code__pre::-webkit-scrollbar,
+      pre[style*="overflow-x: auto"] > div[style*="overflow-x: auto"]::-webkit-scrollbar,
+      div[style*="overflow-x: auto"]::-webkit-scrollbar {
+        height: 8px !important;
+        background: transparent !important;
+      }
+
+      .hljs.code__pre::-webkit-scrollbar-thumb,
+      pre[style*="overflow-x: auto"] > div[style*="overflow-x: auto"]::-webkit-scrollbar-thumb,
+      div[style*="overflow-x: auto"]::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.3) !important;
+        border-radius: 4px !important;
+        border: none !important;
+      }
+
+      .hljs.code__pre::-webkit-scrollbar-thumb:hover,
+      pre[style*="overflow-x: auto"] > div[style*="overflow-x: auto"]::-webkit-scrollbar-thumb:hover,
+      div[style*="overflow-x: auto"]::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.5) !important;
+      }
+
+      .hljs.code__pre::-webkit-scrollbar-track,
+      pre[style*="overflow-x: auto"] > div[style*="overflow-x: auto"]::-webkit-scrollbar-track,
+      div[style*="overflow-x: auto"]::-webkit-scrollbar-track {
+        background: transparent !important;
+      }
+    </style>
+  `;
+
+  if (isPreview) {
+    if (safeCodeTheme.hasHeader) {
+      return `${syntaxProtectionCSS}<pre class="hljs code__pre" style="${preStyle}">${headerElement}<div style="${scrollAreaStyle}"><code style="${codeStyle}">${highlightedContent}</code></div></pre>`;
+    }
+    return `${syntaxProtectionCSS}<pre class="hljs code__pre" style="${preStyle}"><div style="${scrollAreaStyle}"><code style="${codeStyle}">${highlightedContent}</code></div></pre>`;
+  }
+
+  const expanderOpen = `<span style="${expanderStyle}">`;
+  const expanderClose = `</span>`;
+  if (safeCodeTheme.hasHeader) {
+    return `${syntaxProtectionCSS}<pre class="hljs code__pre" style="${preStyle}">${headerElement}<div style="${scrollAreaStyle}">${expanderOpen}<code style="${codeStyleCopy}">${contentForCopy}</code>${expanderClose}</div></pre>`;
+  }
+  return `${syntaxProtectionCSS}<pre class="hljs code__pre" style="${preStyle}"><div style="${scrollAreaStyle}">${expanderOpen}<code style="${codeStyleCopy}">${contentForCopy}</code>${expanderClose}</div></pre>`;
 }

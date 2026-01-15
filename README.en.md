@@ -89,22 +89,24 @@
   - Vue 3: SFC with <script setup> and Composition API for clear UI and state.
   - Vite 5: Fast dev server and build with official @vitejs/plugin-vue.
 - Editor
-  - CodeMirror 6 + vue-codemirror: high-performance editing, shortcuts and scroll sync. Encapsulated in `src/composables/editor/`.
+  - CodeMirror 6: high-performance editing, shortcuts and scroll sync. Encapsulated in `src/composables/editor/`.
   - WYSIWYG (Milkdown): built with `@milkdown/core`, `preset-commonmark`, `preset-gfm`, `plugin-prism`, `plugin-history`, `plugin-clipboard`, plus a custom Mermaid NodeView; component: `src/components/WysiwygPane.vue`.
 - Markdown rendering pipeline
-  - `src/core/markdown/parser/*`: parsing coordinator and strategies; `PreviewPane.vue` calls `parseMarkdown` to generate preview and social HTML.
-  - `src/core/markdown/post-processors/social-styler.js` and `adapters/*`: inject inline styles and theme adaptations tailored for WeChat/social.
+  - `src/core/markdown/parser.js`: single-pass parser handling code blocks/lists/tables/quotes/headings/paragraphs; `PreviewPane.vue` calls `parseMarkdown` to generate preview and social HTML.
+  - `src/core/markdown/inline-formatter.js`: inline syntax processing (bold/italic/links/images/escapes, etc.).
+  - `src/core/markdown/code-formatter.js`: code block rendering and highlighting (including Mermaid special-case and copy styles).
+  - `src/core/markdown/social-adapters.js`: social-platform adapters and inline style injection, with a registrable theme adapter API.
 - Copy pipeline
   - `src/core/editor/copy-formats.js`: generate social/Markdown copy formats.
   - `src/core/editor/clipboard.js`: Clipboard API with fallback; simulate social containers and handle fonts/line height/letter spacing details.
 - Theme system
-  - `src/core/theme/manager.js`: central CSS variable management; `theme-loader.js` pre-injects on first paint; `styles/themes/*` and `core/theme/presets/*` provide presets.
+  - `src/core/theme/manager.js`: central CSS variable management; `src/core/theme/loader.js` pre-injects on first paint; `src/styles/themes/*` provide style baselines, presets live in `src/config/theme-presets.js`.
 - Style baseline
   - `github-markdown-css` for consistent preview typography combined with custom CSS variables and themes.
 - Tests
   - Vitest + @vue/test-utils + jsdom; scripts: `test`, `test:ui`, `test:coverage`.
 - Directory layout
-  - `components/` (UI) · `composables/` (reusable logic) · `core/` (editor/parser/theme/copy) · `config/` (constants & toolbar) · `styles/` (global & component CSS).
+  - `components/` (UI) · `composables/` (reusable logic) · `core/` (editor/parser/theme/copy) · `config/` (constants & toolbar) · `shared/` (utility functions) · `styles/` (global & component CSS).
 
 ## Requirements
 
@@ -229,14 +231,15 @@ docker run -d --name mdeditor -p 8080:80 helongisno1/mdeditor:latest
 - Editor: `src/components/MarkdownEditor.vue`
 - Preview: `src/components/PreviewPane.vue`
 - WYSIWYG: `src/components/WysiwygPane.vue`
-- Settings panel: `src/components/SettingsPanel.vue`, `src/components/SettingsPanelTabbed.vue`
+- Settings panel: `src/components/SettingsPanel.vue`
 - Toolbar config: `src/config/toolbar.js` (data-driven; add/reorder easily)
 - Copy features: `src/core/editor/copy-formats.js`, `src/core/editor/clipboard.js`
 - Markdown parsing & social styling:
-  - Coordinator: `src/core/markdown/parser/coordinator.js`
-  - Social styler: `src/core/markdown/post-processors/social-styler.js`
-  - Theme adapters (extensible): `src/core/markdown/post-processors/adapters/`
-- Theme system (CSS vars): `src/core/theme/manager.js`, `src/core/theme/theme-loader.js`
+  - Parser entry: `src/core/markdown/parser.js`
+  - Inline formatting: `src/core/markdown/inline-formatter.js`
+  - Code blocks: `src/core/markdown/code-formatter.js`
+  - Social styling & adapters: `src/core/markdown/social-adapters.js`
+- Theme system (CSS vars): `src/core/theme/manager.js`, `src/core/theme/loader.js`
 
 ### Copy/Formatting API (for integration)
 
@@ -269,12 +272,12 @@ import { copyMarkdownFormat } from './src/core/editor/copy-formats.js'
 const { success, message } = await copyMarkdownFormat(markdownText)
 ```
 
-- Extend social theme adapters: add a new adapter under `src/core/markdown/post-processors/adapters/` and register it in `adapters/index.js` to tweak headings, lists, quotes, images, tables, etc.
+- Extend social theme adapters: add a new adapter in `src/core/markdown/social-adapters.js` and register it via `registerThemeCopyAdapter` to tweak headings, lists, quotes, images, tables, etc.
 
 ### Preview & Theme Notes
 
 - Viewport modes: switch `desktop / tablet / mobile` on the top-right to preview responsive layout.
-- Theme preload: `src/core/theme/theme-loader.js` injects CSS variables on first paint to avoid flashes.
+- Theme preload: `src/core/theme/loader.js` injects CSS variables on first paint to avoid flashes.
 - CSS variable management: `src/core/theme/manager.js` writes color/code-style/typography/font variables, supporting batched updates for performance.
 
 ### Config & Defaults
@@ -308,8 +311,8 @@ The app supports multiple UI languages; currently built-ins are: `zh-CN` and `en
 
 - Dev tips:
   - Add toolbar buttons via `src/config/toolbar.js`
-  - Extend social styling via `post-processors/adapters/`
-  - Add color themes/code styles under `src/core/theme/presets/`
+  - Extend social styling via `src/core/markdown/social-adapters.js`
+  - Add color themes/code styles under `src/config/theme-presets.js`
 
 ## License
 

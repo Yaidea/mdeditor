@@ -7,7 +7,7 @@ import { mount } from '@vue/test-utils'
 import PreviewPane from '../../src/components/PreviewPane.vue'
 
 // Mock parseMarkdown to throw
-vi.mock('../../src/core/markdown/parser/coordinator.js', () => ({
+vi.mock('../../src/core/markdown/index.js', () => ({
   parseMarkdown: () => { throw new Error('<img src=x onerror=alert(1)>') }
 }))
 

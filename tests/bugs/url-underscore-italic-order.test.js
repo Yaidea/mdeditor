@@ -5,7 +5,7 @@
 import { describe, it, expect } from 'vitest'
 import { defaultColorTheme } from '../../src/config/theme-presets.js'
 import { processAllInlineFormats } from '../../src/core/markdown/inline-formatter.js'
-import { parseMarkdown } from '../../src/core/markdown/parser/coordinator.js'
+import { parseMarkdown } from '../../src/core/markdown/index.js'
 
 const theme = defaultColorTheme
 

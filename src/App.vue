@@ -226,9 +226,9 @@ const handleFileChosen = async (e) => {
   try {
     const text = await file.text()
     updateMarkdownContent(text)
-    showNotification(`已导入：${file.name}`, 'success')
+    showNotification(`已导入: ${file.name}`, 'success')
   } catch (err) {
-    showNotification(`导入失败：${err.message}`, 'error')
+    showNotification(`导入失败: ${err.message}`, 'error')
   }
 }
 

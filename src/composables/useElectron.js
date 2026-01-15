@@ -1,5 +1,20 @@
+/**
+ * @file src/composables/useElectron.js
+ * @description Electron 桌面端集成 Composable
+ *
+ * 专门管理 Electron 环境相关功能，包括：
+ * - 环境检测（是否运行在 Electron 中）
+ * - 文件操作（打开、保存）
+ * - 菜单事件监听（IPC 通信）
+ * - 文件状态管理（路径、修改状态）
+ */
+
 import { ref, onMounted, onUnmounted } from 'vue'
 
+/**
+ * Electron 桌面端集成 Composable
+ * @returns {Object} Electron 状态和方法
+ */
 export function useElectron() {
   const isElectron = ref(false)
   const currentFilePath = ref('')
