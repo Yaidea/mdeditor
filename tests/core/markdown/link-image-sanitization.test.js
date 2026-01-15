@@ -3,8 +3,8 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { defaultColorTheme } from '../../../src/core/theme/presets/color-themes.js'
-import { processLinks, processImages } from '../../../src/core/markdown/formatters/link.js'
+import { defaultColorTheme } from '../../../src/config/theme-presets.js'
+import { processLinks, processImages } from '../../../src/core/markdown/inline-formatter.js'
 
 const theme = defaultColorTheme
 

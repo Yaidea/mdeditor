@@ -4,9 +4,8 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { defaultColorTheme } from '../../../src/core/theme/presets/color-themes.js'
-import { getCodeStyle } from '../../../src/core/theme/presets/code-styles.js'
-import { processAllInlineFormats } from '../../../src/core/markdown/formatters/text.js'
+import { defaultColorTheme, getCodeStyle } from '../../../src/config/theme-presets.js'
+import { processAllInlineFormats } from '../../../src/core/markdown/inline-formatter.js'
 import { formatCodeBlock, formatBlockquote } from '../../../src/core/markdown/formatters/legacy.js'
 
 describe('Markdown 格式化基础', () => {

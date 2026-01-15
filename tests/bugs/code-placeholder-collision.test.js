@@ -9,14 +9,13 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { defaultColorTheme } from '../../src/core/theme/presets/color-themes.js'
+import { defaultColorTheme, getCodeStyle } from '../../src/config/theme-presets.js'
 import {
   processInlineCode,
   restoreCodePlaceholders,
   processAllInlineFormats
-} from '../../src/core/markdown/formatters/text.js'
-import { highlightCode } from '../../src/core/markdown/formatters/code.js'
-import { getCodeStyle } from '../../src/core/theme/presets/code-styles.js'
+} from '../../src/core/markdown/inline-formatter.js'
+import { highlightCode } from '../../src/core/markdown/code-formatter.js'
 
 const theme = defaultColorTheme
 const codeStyle = getCodeStyle('mac')

@@ -3,8 +3,8 @@
  * across the full inline formatting pipeline.
  */
 import { describe, it, expect } from 'vitest'
-import { defaultColorTheme } from '../../src/core/theme/presets/color-themes.js'
-import { processAllInlineFormats } from '../../src/core/markdown/formatters/text.js'
+import { defaultColorTheme } from '../../src/config/theme-presets.js'
+import { processAllInlineFormats } from '../../src/core/markdown/inline-formatter.js'
 import { parseMarkdown } from '../../src/core/markdown/parser/coordinator.js'
 
 const theme = defaultColorTheme

@@ -6,10 +6,9 @@
  * 这些函数设计为可在格式化管道的不同部分重复使用。
  */
 
-import { defaultColorTheme } from '../../theme/presets/color-themes.js';
-import { getCodeStyle } from '../../theme/presets/code-styles.js';
-import { processAllInlineFormats, processInlineFormatsWithoutEscapes } from './text.js';
-import { highlightCode } from './code.js';
+import { defaultColorTheme, getCodeStyle } from '../../../config/theme-presets.js';
+import { processAllInlineFormats, processInlineFormatsWithoutEscapes } from '../inline-formatter.js';
+import { highlightCode } from '../code-formatter.js';
 
 /**
  * 格式化内联文本（粗体、斜体、链接等）

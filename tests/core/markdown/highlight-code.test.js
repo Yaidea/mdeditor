@@ -4,8 +4,8 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { getCodeStyle } from '../../../src/core/theme/presets/code-styles.js'
-import { highlightCode } from '../../../src/core/markdown/formatters/code.js'
+import { getCodeStyle } from '../../../src/config/theme-presets.js'
+import { highlightCode } from '../../../src/core/markdown/code-formatter.js'
 
 describe('highlightCode', () => {
   it('无语法配置时输出转义文本并保护空格', () => {
