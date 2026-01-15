@@ -4,11 +4,11 @@
  */
 
 import { getThemesSafe } from '../../../../shared/utils/theme.js'
-import { cleanReferenceLinks } from '../../formatters/text.js'
-import { FormatterCoordinator } from '../coordinator.js'
+import { cleanReferenceLinks } from '../../inline-formatter.js'
+import { FormatterCoordinator } from '../formatter-coordinator.js'
 import { ThemeProcessor } from '../processors/ThemeProcessor.js'
 import { FontProcessor } from '../processors/FontProcessor.js'
-import { SocialStyler } from '../../post-processors/social-styler.js'
+import { SocialStyler } from '../../social-adapters.js'
 
 /**
  * MarkdownParser

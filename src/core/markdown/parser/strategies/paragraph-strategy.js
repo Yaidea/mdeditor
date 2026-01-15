@@ -6,7 +6,7 @@
  */
 
 import { LineProcessingStrategy } from './base-strategy.js';
-import { processInlineFormatsWithoutEscapes } from '../../formatters/text.js';
+import { processInlineFormatsWithoutEscapes } from '../../inline-formatter.js';
 
 /**
  * 普通段落处理策略（默认策略）
