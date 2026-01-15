@@ -10,7 +10,7 @@
  * - 颜色处理工具函数
  */
 
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useGlobalThemeManager } from './index.js'
 import { getColorThemeList } from '../core/theme/index.js'
 
@@ -67,6 +67,9 @@ export function useSettingsPanel(props, emit) {
 
   // 应用设置标志位
   const isApplyingSettings = ref(false)
+
+  // 存储所有 setTimeout ID，便于清理
+  const pendingTimeouts = ref([])
 
   // 主题选择方法
   const selectThemeSystem = (systemId) => {
@@ -278,8 +281,28 @@ export function useSettingsPanel(props, emit) {
     }
   })
 
+  // 清理所有待处理的 setTimeout
+  const clearPendingTimeouts = () => {
+    pendingTimeouts.value.forEach(id => clearTimeout(id))
+    pendingTimeouts.value = []
+  }
+
+  // 安全的 setTimeout 包装函数
+  const safeSetTimeout = (callback, delay) => {
+    const id = setTimeout(() => {
+      // 执行后从列表中移除
+      pendingTimeouts.value = pendingTimeouts.value.filter(tid => tid !== id)
+      callback()
+    }, delay)
+    pendingTimeouts.value.push(id)
+    return id
+  }
+
   // 应用设置方法
   const applySettings = () => {
+    // 先清理之前可能未完成的定时器
+    clearPendingTimeouts()
+
     let delay = 0
 
     // 设置标志位，防止watch监听器重复应用字体设置
@@ -288,7 +311,7 @@ export function useSettingsPanel(props, emit) {
     // 应用布局主题系统
     if (selectedThemeSystemId.value !== currentLayoutId.value) {
       setLayout(selectedThemeSystemId.value)
-      setTimeout(() => {
+      safeSetTimeout(() => {
         const selected = layoutList.value.find(i => i.id === selectedThemeSystemId.value)
         const systemName = selected?.name || selectedThemeSystemId.value
         emit('show-notification', `主题风格已更新为「${systemName}」`, 'success')
@@ -299,7 +322,7 @@ export function useSettingsPanel(props, emit) {
     // 应用颜色主题（内置主题）
     if (!isUsingCustomColor.value && selectedThemeId.value !== currentColorThemeId.value) {
       setColorTheme(selectedThemeId.value)
-      setTimeout(() => {
+      safeSetTimeout(() => {
         emit('show-notification', '主题色已更新', 'success')
       }, delay)
       delay += 100
@@ -312,7 +335,7 @@ export function useSettingsPanel(props, emit) {
     )
 
     if (customColorChanged && isUsingCustomColor.value && currentCustomColor.value) {
-      setTimeout(() => {
+      safeSetTimeout(() => {
         emit('show-notification', `自定义颜色主题已应用 (${currentCustomColor.value})`, 'success')
       }, delay)
       delay += 100
@@ -321,7 +344,7 @@ export function useSettingsPanel(props, emit) {
     // 应用代码样式
     if (selectedCodeStyleId.value !== currentCodeStyleId.value) {
       setCodeStyle(selectedCodeStyleId.value)
-      setTimeout(() => {
+      safeSetTimeout(() => {
         const styleName = selectedCodeStyleId.value === 'mac' ? 'Mac 风格' :
                          selectedCodeStyleId.value === 'github' ? 'GitHub 风格' :
                          selectedCodeStyleId.value === 'vscode' ? 'VS Code 风格' :
@@ -356,7 +379,7 @@ export function useSettingsPanel(props, emit) {
 
     // 分别处理字体族和字号的通知
     if (fontFamilyChanged) {
-      setTimeout(() => {
+      safeSetTimeout(() => {
         const fontName = fontFamilyList.value.find(f => f.id === selectedFontFamily.value)?.name || '字体'
         emit('show-notification', `字体族已更新为${fontName}`, 'success')
       }, delay)
@@ -364,34 +387,34 @@ export function useSettingsPanel(props, emit) {
     }
 
     if (fontSizeChanged) {
-      setTimeout(() => {
+      safeSetTimeout(() => {
         emit('show-notification', `字号已更新为${selectedFontSize.value}px`, 'success')
       }, delay)
       delay += 100
     }
 
     if (letterSpacingChanged) {
-      setTimeout(() => {
+      safeSetTimeout(() => {
         emit('show-notification', `字间距已更新为${selectedLetterSpacing.value}px`, 'success')
       }, delay)
       delay += 100
     }
 
     if (lineHeightChanged) {
-      setTimeout(() => {
+      safeSetTimeout(() => {
         emit('show-notification', `行间距已更新为${selectedLineHeight.value}`, 'success')
       }, delay)
       delay += 100
     }
 
     // 重置标志位
-    setTimeout(() => {
+    safeSetTimeout(() => {
       isApplyingSettings.value = false
     }, delay + 100)
 
     // 如果使用自定义颜色，在所有设置应用后重新应用自定义主题
     if (isUsingCustomColor.value && currentCustomTheme.value) {
-      setTimeout(() => {
+      safeSetTimeout(() => {
         // 重新设置临时主题标记
         if (themeManager.themeState) {
           themeManager.themeState.hasTemporaryCustomTheme = true
@@ -409,6 +432,11 @@ export function useSettingsPanel(props, emit) {
 
     emit('close')
   }
+
+  // 组件卸载时清理定时器
+  onUnmounted(() => {
+    clearPendingTimeouts()
+  })
 
   return {
     // 主题管理器

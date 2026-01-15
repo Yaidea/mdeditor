@@ -9,7 +9,7 @@
  * - 复制格式选择
  */
 
-import { ref, watch } from 'vue'
+import { ref, watch, onUnmounted } from 'vue'
 import { copySocialFormat, copyMarkdownFormat, getCopyFormatOptions } from '../core/editor/copy-formats.js'
 import { useGlobalThemeManager } from './index.js'
 import { i18n } from '../plugins/i18n.js'
@@ -125,13 +125,22 @@ export function useClipboard(options = {}) {
   }
 
   // 监听语言切换，实时刷新复制菜单
+  let stopLocaleWatch = null
   try {
     const loc = i18n?.global?.locale
     const localeRef = typeof loc === 'string' ? null : loc
     if (localeRef && typeof localeRef === 'object' && 'value' in localeRef) {
-      watch(localeRef, () => reloadCopyFormatOptions())
+      stopLocaleWatch = watch(localeRef, () => reloadCopyFormatOptions())
     }
   } catch {}
+
+  // 组件卸载时清理 watch
+  onUnmounted(() => {
+    if (stopLocaleWatch) {
+      stopLocaleWatch()
+      stopLocaleWatch = null
+    }
+  })
 
   return {
     // 状态

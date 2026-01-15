@@ -88,23 +88,25 @@ onMounted(() => {
   document.addEventListener('visibilitychange', updateVisibility)
 
   // Observe DOM changes to rebind when panes mount/unmount (e.g., switching modes)
+  // MutationObserver 已经足够可靠，不再需要 setInterval 轮询
   const root = document.getElementById('app') || document.body
   if (root && typeof MutationObserver !== 'undefined') {
     domObserver = new MutationObserver(() => scheduleRebind())
     domObserver.observe(root, { childList: true, subtree: true })
+  } else {
+    // 仅在 MutationObserver 不可用时才使用 setInterval 作为降级方案
+    checkTimer = setInterval(() => {
+      const eExists = !!document.querySelector('.cm-scroller')
+      const pExists = !!document.querySelector('.preview-rendered, .wysiwyg-rendered')
+      if ((eExists && !editorScroller) || (pExists && !previewScroller)) scheduleRebind()
+    }, 1500)
   }
-
-  // Fallback periodic check to ensure listeners are attached
-  checkTimer = setInterval(() => {
-    const eExists = !!document.querySelector('.cm-scroller')
-    const pExists = !!document.querySelector('.preview-rendered, .wysiwyg-rendered')
-    if ((eExists && !editorScroller) || (pExists && !previewScroller)) scheduleRebind()
-  }, 1500)
 })
 
 onUnmounted(() => {
   document.removeEventListener('visibilitychange', updateVisibility)
   unbind()
+  if (rebindTimeout) { clearTimeout(rebindTimeout); rebindTimeout = null }
   if (domObserver) { domObserver.disconnect(); domObserver = null }
   if (checkTimer) { clearInterval(checkTimer); checkTimer = null }
 })

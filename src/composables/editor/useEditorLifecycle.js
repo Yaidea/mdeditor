@@ -23,10 +23,17 @@ import { EDITOR_CONFIG } from '../../config/constants/editor.js';
  * @returns {Object} 生命周期管理方法
  */
 export function useEditorLifecycle({ editorState, editorEvents, editorTheme }) {
+  // 组件挂载状态标志，防止卸载后执行初始化
+  let isMounted = false
+  // 初始化定时器 ID，用于清理
+  let initTimeoutId = null
+
   /**
    * 初始化 CodeMirror 编辑器
    */
   const initEditor = () => {
+    // 检查组件是否已卸载
+    if (!isMounted) return;
     if (!editorState.editorElement.value || editorState.getEditorView()) return;
 
     // 创建更新监听器
@@ -136,11 +143,19 @@ export function useEditorLifecycle({ editorState, editorEvents, editorTheme }) {
 
   // 生命周期钩子
   onMounted(() => {
+    isMounted = true
     // 使用 setTimeout 确保父组件的 DOM 已经完全渲染
-    setTimeout(initEditor, 0);
+    initTimeoutId = setTimeout(initEditor, 0);
   });
 
   onUnmounted(() => {
+    // 先设置标志位，防止定时器回调执行
+    isMounted = false
+    // 清理待执行的定时器
+    if (initTimeoutId !== null) {
+      clearTimeout(initTimeoutId)
+      initTimeoutId = null
+    }
     destroyEditor();
   });
 

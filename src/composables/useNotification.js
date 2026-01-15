@@ -9,7 +9,7 @@
  * - 通知动画处理
  */
 
-import { ref } from 'vue'
+import { ref, onUnmounted } from 'vue'
 
 /**
  * 通知系统管理 Composable
@@ -18,6 +18,22 @@ import { ref } from 'vue'
 export function useNotification() {
   // 状态
   const notifications = ref([])
+
+  // 追踪所有待处理的定时器，用于清理
+  const pendingTimers = new Map()
+
+  /**
+   * 清理所有待处理的定时器（防止内存泄漏）
+   */
+  const clearAllTimers = () => {
+    pendingTimers.forEach((timerId) => clearTimeout(timerId))
+    pendingTimers.clear()
+  }
+
+  // 组件卸载时清理所有定时器，防止内存泄漏
+  onUnmounted(() => {
+    clearAllTimers()
+  })
 
   /**
    * 显示通知
@@ -37,12 +53,14 @@ export function useNotification() {
     }
     
     notifications.value.push(notification)
-    
-    // 自动移除通知
-    setTimeout(() => {
+
+    // 自动移除通知，追踪定时器以便清理
+    const timerId = setTimeout(() => {
+      pendingTimers.delete(id)
       removeNotification(id)
     }, duration)
-    
+    pendingTimers.set(id, timerId)
+
     return id
   }
 

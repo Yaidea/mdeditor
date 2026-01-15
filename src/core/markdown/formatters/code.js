@@ -196,11 +196,12 @@ export function highlightCode(code, language, codeTheme) {
   result = finalResult;
 
   // 智能地保护空格：分步处理避免破坏HTML结构
-  // 1. 先用占位符保护HTML标签
+  // 1. 先用占位符保护HTML标签（使用唯一 ID 避免碰撞）
   const tagPlaceholders = [];
+  const uniqueId = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
   let tagIndex = 0;
   result = result.replace(/<[^>]+>/g, (match) => {
-    const placeholder = `__TAG_${tagIndex}__`;
+    const placeholder = `\x00TAG_${uniqueId}_${tagIndex}\x00`;
     tagPlaceholders.push({ placeholder, tag: match });
     tagIndex++;
     return placeholder;

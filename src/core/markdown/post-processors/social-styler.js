@@ -138,7 +138,7 @@ export class SocialStyler {
     if (!fontSettings || !html) return html
     const fontFamily = FONT_FAMILY_MAP[fontSettings.fontFamily] || FONT_FAMILY_MAP['microsoft-yahei']
     const fontSize = fontSettings.fontSize || 16
-    const lineHeight = calculateLineHeight(fontSize, fontSettings.lineHeight)
+    const lineHeight = calcLH(fontSize, fontSettings.lineHeight)
     const letterSpacing = typeof fontSettings.letterSpacing === 'number' ? fontSettings.letterSpacing : 0
     return addInlineStyles(html, fontFamily, fontSize, lineHeight, letterSpacing)
   }

@@ -50,8 +50,34 @@ export function cleanReferenceLinks(text) {
 // 这里保留导出以维持向后兼容性
 export { escapeHtml, preprocessEscapes, postprocessEscapes } from './escape.js';
 
-// 用于保护代码内容的占位符
-const CODE_PLACEHOLDERS = [];
+/**
+ * 代码占位符上下文 - 使用闭包隔离每次处理的状态，避免并发竞态条件
+ * @typedef {Object} CodePlaceholderContext
+ * @property {string[]} placeholders - 代码 HTML 片段数组
+ * @property {string} id - 当前上下文的唯一标识符
+ */
+
+/** @type {CodePlaceholderContext|null} */
+let activeContext = null;
+
+/**
+ * 生成唯一的占位符 ID
+ * @returns {string} - 唯一 ID
+ */
+function generatePlaceholderId() {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+}
+
+/**
+ * 创建新的代码占位符上下文
+ * @returns {CodePlaceholderContext} - 新的上下文对象
+ */
+function createCodeContext() {
+  return {
+    placeholders: [],
+    id: generatePlaceholderId()
+  };
+}
 
 /**
  * 处理内联代码
@@ -61,8 +87,8 @@ const CODE_PLACEHOLDERS = [];
  * @returns {string} - 处理后的文本
  */
 export function processInlineCode(text, theme, baseFontSize = 16) {
-  // 清空占位符数组
-  CODE_PLACEHOLDERS.length = 0;
+  // 为每次处理创建独立的上下文，避免并发时状态互相覆盖
+  activeContext = createCodeContext();
 
   return text.replace(REGEX_PATTERNS.CODE, (_, code) => {
     const escapedCode = escapeHtml(code);
@@ -71,9 +97,9 @@ export function processInlineCode(text, theme, baseFontSize = 16) {
     // 使用主题色的社交平台兼容样式
     const codeHtml = `<code style="background-color: ${theme.inlineCodeBg}; color: ${theme.inlineCodeText}; padding: 2px 4px; border-radius: 3px; font-family: Consolas, monospace; font-size: ${codeFontSize}px; border: 1px solid ${theme.inlineCodeBorder};">${escapedCode}</code>`;
 
-    // 创建安全的占位符（使用不会被格式化的字符）
-    const placeholder = `〖CODE${CODE_PLACEHOLDERS.length}〗`;
-    CODE_PLACEHOLDERS.push(codeHtml);
+    // 创建安全的占位符（使用唯一 ID 避免碰撞）
+    const placeholder = `〖CODE_${activeContext.id}_${activeContext.placeholders.length}〗`;
+    activeContext.placeholders.push(codeHtml);
 
     return placeholder;
   });
@@ -85,11 +111,20 @@ export function processInlineCode(text, theme, baseFontSize = 16) {
  * @returns {string} - 恢复后的文本
  */
 export function restoreCodePlaceholders(text) {
+  if (!activeContext) {
+    return text;
+  }
+
   let result = text;
-  CODE_PLACEHOLDERS.forEach((codeHtml, index) => {
-    const placeholder = `〖CODE${index}〗`;
+  const { placeholders, id } = activeContext;
+
+  placeholders.forEach((codeHtml, index) => {
+    const placeholder = `〖CODE_${id}_${index}〗`;
     result = result.replace(placeholder, codeHtml);
   });
+
+  // 处理完成后清理上下文
+  activeContext = null;
   return result;
 }
 
