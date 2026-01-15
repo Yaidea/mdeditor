@@ -1,43 +1,52 @@
 /**
  * @file src/config/theme-presets.js
- * @description 主题预设合集 - 颜色主题、代码样式、排版系统、字体设置
+ * @description 主题预设配置文件
  *
- * 本文件整合了所有主题相关的预设配置：
- * - colorThemes: 颜色主题定义
- * - codeStyles: 代码高亮样式定义
- * - themeSystems: 排版主题系统定义
- * - fontSettings: 字体设置预设
+ * 整合了所有主题相关的预设定义，包括：
+ * - 基础工厂函数（createTheme, createCodeStyle, createThemeSystem）
+ * - 颜色主题（Color Themes）
+ * - 代码高亮样式（Code Styles）
+ * - 排版主题系统（Theme Systems）
+ * - 字体设置（Font Settings）
  */
 
 // ============================================================================
-// 工厂函数
+// 基础工厂函数
 // ============================================================================
 
 /**
- * 创建一个"颜色主题"对象
+ * 创建一个"颜色主题"对象。
+ * @param {object} config - 主题的核心配置。
+ * @returns {object} - 一个完整的、带有默认值的颜色主题对象。
  */
-const createTheme = (config) => ({
+export const createTheme = (config) => ({
+  // --- 基本信息 ---
   id: config.id,
   name: config.name,
   description: config.description,
   isDark: config.isDark || false,
 
+  // --- 核心颜色 ---
   primary: config.primary,
   primaryHover: config.primaryHover,
   primaryLight: config.primaryLight,
   primaryDark: config.primaryDark,
 
+  // --- 文本颜色 ---
   textPrimary: config.textPrimary || '#1f2328',
   textSecondary: config.textSecondary || '#656d76',
   textTertiary: config.textTertiary || '#8b949e',
 
+  // --- 背景颜色 ---
   bgPrimary: config.bgPrimary || '#ffffff',
   bgSecondary: config.bgSecondary || '#f6f8fa',
   bgTertiary: config.bgTertiary || '#f1f3f4',
 
+  // --- 边框颜色 ---
   borderLight: config.borderLight || '#d0d7de',
   borderMedium: config.borderMedium || '#8b949e',
 
+  // --- 特定组件颜色 ---
   tableHeaderBg: config.tableHeaderBg || '#f6f8fa',
   tableBorder: config.tableBorder || '#d0d7de',
   blockquoteBorder: config.blockquoteBorder || config.primary,
@@ -45,10 +54,12 @@ const createTheme = (config) => ({
   hrColor: config.hrColor || config.primary,
   listColors: config.listColors || [config.primary, '#10A0FF', '#FA5151', '#666'],
 
+  // --- 内联代码颜色 ---
   inlineCodeBg: config.inlineCodeBg || 'rgba(251, 146, 60, 0.08)',
   inlineCodeText: config.inlineCodeText || '#ea580c',
   inlineCodeBorder: config.inlineCodeBorder || 'rgba(251, 146, 60, 0.15)',
 
+  // --- 布局与排版 ---
   layout: {
     maxWidth: config.layout?.maxWidth || '800px',
     lineHeight: config.layout?.lineHeight || '1.6',
@@ -62,13 +73,17 @@ const createTheme = (config) => ({
 });
 
 /**
- * 创建一个"代码高亮样式"对象
+ * 创建一个"代码高亮样式"对象。
+ * @param {object} config - 代码样式的核心配置。
+ * @returns {object} - 一个完整的、带有默认值的代码样式对象。
  */
-const createCodeStyle = (config) => ({
+export const createCodeStyle = (config) => ({
+  // --- 基本信息 ---
   id: config.id,
   name: config.name,
   description: config.description,
 
+  // --- 容器样式 ---
   background: config.background,
   borderRadius: config.borderRadius || '12px',
   padding: config.padding || '24px',
@@ -76,18 +91,21 @@ const createCodeStyle = (config) => ({
   border: config.border || 'none',
   boxShadow: config.boxShadow || 'none',
 
+  // --- 文本样式 ---
   color: config.color,
   fontSize: config.fontSize || '14px',
   lineHeight: config.lineHeight || '1.7',
   fontFamily: config.fontFamily || '"SF Mono", Monaco, Inconsolata, "Fira Code", Consolas, monospace',
   fontWeight: config.fontWeight || '400',
 
+  // --- 装饰元素 ---
   hasTrafficLights: config.hasTrafficLights || false,
   trafficLightsStyle: config.trafficLightsStyle || '',
   hasHeader: config.hasHeader || false,
   headerStyle: config.headerStyle || '',
   headerContent: config.headerContent || '',
 
+  // --- 语法高亮颜色 ---
   syntaxHighlight: {
     comment: '#6a737d',
     keyword: '#d73a49',
@@ -99,19 +117,26 @@ const createCodeStyle = (config) => ({
     ...config.syntaxHighlight,
   },
 
+  // --- 特殊效果 ---
   hasGlow: config.hasGlow || false,
   glowColor: config.glowColor || '',
 });
 
 /**
- * 创建一个"排版主题系统"对象
+ * 创建一个"排版主题系统"对象。
+ * @param {object} config - 排版系统的核心配置。
+ * @returns {object} - 一个完整的、带有默认值的排版系统对象。
  */
-const createThemeSystem = (config) => ({
+export const createThemeSystem = (config) => ({
+  // --- 基本信息 ---
   id: config.id,
   name: config.name,
   description: config.description,
+
+  // --- 支持的颜色主题 ---
   supportedColors: config.supportedColors || [],
 
+  // --- 布局 ---
   layout: {
     maxWidth: '100%',
     padding: '16px',
@@ -120,6 +145,7 @@ const createThemeSystem = (config) => ({
     ...config.layout,
   },
 
+  // --- 排版 ---
   typography: {
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
     codeFontFamily: '"SF Mono", Monaco, monospace',
@@ -138,6 +164,7 @@ const createThemeSystem = (config) => ({
     ...config.typography,
   },
 
+  // --- 基础组件样式 ---
   styles: {
     codeBlock: {
       background: '#f6f8fa',
@@ -154,14 +181,19 @@ const createThemeSystem = (config) => ({
     ...config.styles,
   },
 
+  // --- 复制适配配置 ---
   copy: config.copy || null,
 });
 
 // ============================================================================
-// 颜色主题
+// 颜色主题 (Color Themes)
 // ============================================================================
 
+/**
+ * 包含所有预定义颜色主题的对象。
+ */
 export const colorThemes = {
+  // 洋红
   chijin: createTheme({
     id: 'chijin',
     name: '洋红',
@@ -175,6 +207,7 @@ export const colorThemes = {
     inlineCodeBorder: 'rgba(255, 0, 151, 0.15)',
   }),
 
+  // 紫棠
   dianlan: createTheme({
     id: 'dianlan',
     name: '紫棠',
@@ -188,6 +221,7 @@ export const colorThemes = {
     inlineCodeBorder: 'rgba(86, 0, 79, 0.15)',
   }),
 
+  // 杏黄
   ehuang: createTheme({
     id: 'ehuang',
     name: '杏黄',
@@ -201,6 +235,7 @@ export const colorThemes = {
     inlineCodeBorder: 'rgba(255, 166, 49, 0.15)',
   }),
 
+  // 葱绿
   conglv: createTheme({
     id: 'conglv',
     name: '葱绿',
@@ -214,6 +249,7 @@ export const colorThemes = {
     inlineCodeBorder: 'rgba(10, 163, 68, 0.15)',
   }),
 
+  // 石榴红
   shiliuhong: createTheme({
     id: 'shiliuhong',
     name: '石榴红',
@@ -227,6 +263,7 @@ export const colorThemes = {
     inlineCodeBorder: 'rgba(242, 12, 0, 0.15)',
   }),
 
+  // 煤黑
   meihei: createTheme({
     id: 'meihei',
     name: '煤黑',
@@ -240,6 +277,7 @@ export const colorThemes = {
     inlineCodeBorder: 'rgba(49, 44, 32, 0.15)',
   }),
 
+  // 绀青绀紫
   ganziqing: createTheme({
     id: 'ganziqing',
     name: '绀青绀紫',
@@ -253,6 +291,7 @@ export const colorThemes = {
     inlineCodeBorder: 'rgba(0, 51, 113, 0.15)',
   }),
 
+  // 玄色
   xuanse: createTheme({
     id: 'xuanse',
     name: '玄色',
@@ -267,12 +306,22 @@ export const colorThemes = {
   }),
 };
 
+/** 默认的颜色主题 */
 export const defaultColorTheme = colorThemes.meihei;
 
+/**
+ * 根据 ID 获取颜色主题对象。
+ * @param {string} themeId - 颜色主题的 ID。
+ * @returns {object|null} - 对应的颜色主题对象，如果找不到则返回 null。
+ */
 export const getColorTheme = (themeId) => {
-  return colorThemes[themeId] || defaultColorTheme;
+  return colorThemes[themeId] || null;
 };
 
+/**
+ * 获取简化的颜色主题列表，用于 UI 显示
+ * @returns {Array} 主题列表，包含 id、name、description、primary 字段
+ */
 export const getColorThemeList = () => {
   return Object.values(colorThemes).map(theme => ({
     id: theme.id,
@@ -282,6 +331,9 @@ export const getColorThemeList = () => {
   }));
 };
 
+/**
+ * 颜色主题预设分组
+ */
 export const colorThemePresets = {
   all: Object.keys(colorThemes),
   traditional: ['chijin', 'dianlan', 'ehuang', 'conglv', 'shiliuhong', 'meihei', 'ganziqing', 'xuanse'],
@@ -290,13 +342,20 @@ export const colorThemePresets = {
   dark: ['meihei', 'xuanse', 'dianlan', 'ganziqing'],
 };
 
+/**
+ * 自定义颜色主题的存储键
+ */
 export const CUSTOM_THEME_STORAGE_KEY = 'markdown-editor-custom-themes';
 
-// ============================================================================
-// 颜色主题生成器
-// ============================================================================
-
+/**
+ * 从单一颜色生成完整主题色板的工具类
+ */
 export class ColorThemeGenerator {
+  /**
+   * 将十六进制颜色转换为HSL
+   * @param {string} hex - 十六进制颜色值
+   * @returns {{h: number, s: number, l: number}}
+   */
   static hexToHsl(hex) {
     const r = parseInt(hex.slice(1, 3), 16) / 255;
     const g = parseInt(hex.slice(3, 5), 16) / 255;
@@ -322,6 +381,13 @@ export class ColorThemeGenerator {
     return { h: h * 360, s: s * 100, l: l * 100 };
   }
 
+  /**
+   * 将HSL转换为十六进制颜色
+   * @param {number} h - 色相 (0-360)
+   * @param {number} s - 饱和度 (0-100)
+   * @param {number} l - 亮度 (0-100)
+   * @returns {string} 十六进制颜色值
+   */
   static hslToHex(h, s, l) {
     h /= 360;
     s /= 100;
@@ -355,6 +421,11 @@ export class ColorThemeGenerator {
     return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
   }
 
+  /**
+   * 计算颜色的相对亮度
+   * @param {string} hex - 十六进制颜色值
+   * @returns {number} 相对亮度值 (0-1)
+   */
   static getLuminance(hex) {
     const r = parseInt(hex.slice(1, 3), 16) / 255;
     const g = parseInt(hex.slice(3, 5), 16) / 255;
@@ -367,6 +438,12 @@ export class ColorThemeGenerator {
     return 0.2126 * sRGB[0] + 0.7152 * sRGB[1] + 0.0722 * sRGB[2];
   }
 
+  /**
+   * 计算两个颜色之间的对比度
+   * @param {string} color1 - 第一个颜色
+   * @param {string} color2 - 第二个颜色
+   * @returns {number} 对比度值
+   */
   static getContrastRatio(color1, color2) {
     const lum1 = this.getLuminance(color1);
     const lum2 = this.getLuminance(color2);
@@ -375,6 +452,13 @@ export class ColorThemeGenerator {
     return (brightest + 0.05) / (darkest + 0.05);
   }
 
+  /**
+   * 调整颜色亮度以确保足够的对比度
+   * @param {string} color - 要调整的颜色
+   * @param {string} background - 背景颜色
+   * @param {number} targetRatio - 目标对比度
+   * @returns {string} 调整后的颜色
+   */
   static adjustColorForContrast(color, background = '#ffffff', targetRatio = 4.5) {
     const hsl = this.hexToHsl(color);
     let adjustedColor = color;
@@ -406,6 +490,11 @@ export class ColorThemeGenerator {
     return adjustedColor;
   }
 
+  /**
+   * 从主色生成完整的主题色板
+   * @param {string} primaryColor - 主色的十六进制值
+   * @returns {object} 完整的主题色板
+   */
   static generateThemeColors(primaryColor) {
     const adjustedPrimary = this.adjustColorForContrast(primaryColor, '#ffffff', 4.5);
     const adjustedHsl = this.hexToHsl(adjustedPrimary);
@@ -445,6 +534,13 @@ export class ColorThemeGenerator {
     };
   }
 
+  /**
+   * 创建自定义主题
+   * @param {string} primaryColor - 主色
+   * @param {string} name - 主题名称
+   * @param {string} description - 主题描述
+   * @returns {object} 完整的主题对象
+   */
   static createCustomTheme(primaryColor, name = '自定义主题', description = '用户自定义的颜色主题') {
     const colors = this.generateThemeColors(primaryColor);
     const customId = `custom-${Date.now()}`;
@@ -459,10 +555,14 @@ export class ColorThemeGenerator {
 }
 
 // ============================================================================
-// 代码样式
+// 代码高亮样式 (Code Styles)
 // ============================================================================
 
+/**
+ * 包含所有预定义代码高亮样式的对象。
+ */
 export const codeStyles = {
+  // Mac 风格
   mac: createCodeStyle({
     id: 'mac',
     name: 'Mac 风格',
@@ -485,6 +585,7 @@ export const codeStyles = {
     }
   }),
 
+  // GitHub 风格
   github: createCodeStyle({
     id: 'github',
     name: 'GitHub 风格',
@@ -506,6 +607,7 @@ export const codeStyles = {
     }
   }),
 
+  // VS Code 风格
   vscode: createCodeStyle({
     id: 'vscode',
     name: 'VS Code 风格',
@@ -529,6 +631,7 @@ export const codeStyles = {
     }
   }),
 
+  // 终端风格
   terminal: createCodeStyle({
     id: 'terminal',
     name: '终端风格',
@@ -554,12 +657,22 @@ export const codeStyles = {
   }),
 };
 
+/** 默认的代码样式 */
 export const defaultCodeStyle = codeStyles.mac;
 
+/**
+ * 根据 ID 获取代码样式对象。
+ * @param {string} styleId - 代码样式的 ID。
+ * @returns {object|null} - 对应的代码样式对象，如果找不到则返回 null。
+ */
 export const getCodeStyle = (styleId) => {
-  return codeStyles[styleId] || defaultCodeStyle;
+  return codeStyles[styleId] || null;
 };
 
+/**
+ * 获取简化的代码样式列表，用于 UI 显示
+ * @returns {Array} 样式列表，包含 id、name、description 字段
+ */
 export const getCodeStyleList = () => {
   return Object.values(codeStyles).map(style => ({
     id: style.id,
@@ -568,6 +681,9 @@ export const getCodeStyleList = () => {
   }));
 };
 
+/**
+ * 代码样式预设分组
+ */
 export const codeStylePresets = {
   all: Object.keys(codeStyles),
   dark: ['mac', 'vscode', 'terminal'],
@@ -576,10 +692,14 @@ export const codeStylePresets = {
 };
 
 // ============================================================================
-// 排版主题系统
+// 排版主题系统 (Theme Systems)
 // ============================================================================
 
+/**
+ * 包含所有预定义排版主题系统的对象。
+ */
 export const themeSystems = {
+  // 默认主题
   default: createThemeSystem({
     id: 'default',
     name: '默认主题',
@@ -600,6 +720,7 @@ export const themeSystems = {
     },
   }),
 
+  // 清风排版
   breeze: createThemeSystem({
     id: 'breeze',
     name: '清风排版',
@@ -638,12 +759,22 @@ export const themeSystems = {
   }),
 };
 
+/** 默认的排版主题系统 */
 export const defaultThemeSystem = themeSystems.default;
 
+/**
+ * 根据 ID 获取排版主题系统对象。
+ * @param {string} systemId - 排版系统的 ID。
+ * @returns {object|null} - 对应的排版系统对象，如果找不到则返回 null。
+ */
 export const getThemeSystem = (systemId) => {
-  return themeSystems[systemId] || defaultThemeSystem;
+  return themeSystems[systemId] || null;
 };
 
+/**
+ * 获取所有可用排版主题系统的列表（用于 UI 展示）。
+ * @returns {Array<{id: string, name: string, description: string}>}
+ */
 export const getThemeSystemList = () => {
   return Object.values(themeSystems).map(system => ({
     id: system.id,
@@ -653,15 +784,21 @@ export const getThemeSystemList = () => {
   }));
 };
 
+/**
+ * 主题系统预设
+ */
 export const themeSystemPresets = {
   all: ['default', 'breeze'],
   default: ['default', 'breeze'],
 };
 
 // ============================================================================
-// 字体设置
+// 字体设置 (Font Settings)
 // ============================================================================
 
+/**
+ * 可用的字体族选项 - 微信公众号兼容版本
+ */
 export const fontFamilyOptions = [
   {
     id: 'microsoft-yahei',
@@ -700,6 +837,9 @@ export const fontFamilyOptions = [
   }
 ];
 
+/**
+ * 字号选项配置
+ */
 export const fontSizeOptions = {
   min: 12,
   max: 24,
@@ -716,6 +856,9 @@ export const fontSizeOptions = {
   ]
 };
 
+/**
+ * 字体族分组
+ */
 export const fontFamilyGroups = {
   recommended: {
     name: '推荐字体',
@@ -729,6 +872,9 @@ export const fontFamilyGroups = {
   }
 };
 
+/**
+ * 默认字体设置
+ */
 export const defaultFontSettings = {
   fontFamily: 'microsoft-yahei',
   fontSize: 16,
@@ -736,10 +882,19 @@ export const defaultFontSettings = {
   lineHeight: 1.6
 };
 
+/**
+ * 根据 ID 获取字体族配置
+ * @param {string} fontId - 字体 ID
+ * @returns {object|null} 字体配置对象
+ */
 export function getFontFamily(fontId) {
   return fontFamilyOptions.find(font => font.id === fontId) || null;
 }
 
+/**
+ * 获取字体族列表（用于 UI 显示）
+ * @returns {Array} 简化的字体族列表
+ */
 export function getFontFamilyList() {
   return fontFamilyOptions.map(font => ({
     id: font.id,
@@ -749,12 +904,22 @@ export function getFontFamilyList() {
   }));
 }
 
+/**
+ * 验证字号是否在有效范围内
+ * @param {number} fontSize - 字号值
+ * @returns {boolean} 是否有效
+ */
 export function isValidFontSize(fontSize) {
   return typeof fontSize === 'number' &&
          fontSize >= fontSizeOptions.min &&
          fontSize <= fontSizeOptions.max;
 }
 
+/**
+ * 获取最接近的有效字号
+ * @param {number} fontSize - 输入的字号
+ * @returns {number} 有效的字号
+ */
 export function getValidFontSize(fontSize) {
   if (!isValidFontSize(fontSize)) {
     return fontSizeOptions.default;
@@ -762,6 +927,11 @@ export function getValidFontSize(fontSize) {
   return Math.round(fontSize);
 }
 
+/**
+ * 生成字体相关的 CSS 变量
+ * @param {object} fontSettings - 字体设置
+ * @returns {object} CSS 变量对象
+ */
 export function generateFontCSSVariables(fontSettings) {
   const fontFamily = getFontFamily(fontSettings.fontFamily);
   const fontSize = getValidFontSize(fontSettings.fontSize);
@@ -776,6 +946,9 @@ export function generateFontCSSVariables(fontSettings) {
   };
 }
 
+/**
+ * 字体设置工具函数集合
+ */
 export const fontSettingsUtils = {
   getFontFamily,
   getFontFamilyList,
@@ -783,6 +956,12 @@ export const fontSettingsUtils = {
   getValidFontSize,
   generateFontCSSVariables,
 
+  /**
+   * 获取字体预览样式
+   * @param {string} fontId - 字体 ID
+   * @param {number} fontSize - 字号
+   * @returns {object} 样式对象
+   */
   getPreviewStyle(fontId, fontSize) {
     const fontFamily = getFontFamily(fontId);
     return {
@@ -793,13 +972,12 @@ export const fontSettingsUtils = {
     };
   },
 
+  /**
+   * 检查字体是否可用
+   * @param {string} fontId - 字体 ID
+   * @returns {boolean} 是否可用
+   */
   isFontAvailable(fontId) {
     return fontFamilyOptions.some(font => font.id === fontId);
   }
 };
-
-// ============================================================================
-// 导出工厂函数（供外部创建自定义主题）
-// ============================================================================
-
-export { createTheme, createCodeStyle, createThemeSystem };
