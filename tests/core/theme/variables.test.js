@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { hexToRgb, computeThemeVariables } from '../../../src/core/theme/variables.js'
+import { hexToRgb, computeThemeVariables } from '../../../src/core/theme/manager.js'
 
 describe('theme variables 工具函数', () => {
   it('hexToRgb 支持 6 位与 3 位十六进制', () => {

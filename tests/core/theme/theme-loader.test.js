@@ -14,7 +14,7 @@ describe('theme-loader 预加载', () => {
   })
 
   it('无存储时使用默认主题变量', async () => {
-    await import('../../../src/core/theme/theme-loader.js')
+    await import('../../../src/core/theme/loader.js')
     const style = document.documentElement.style
     expect(style.getPropertyValue('--theme-primary')).toBeTruthy()
   })
@@ -30,7 +30,7 @@ describe('theme-loader 预加载', () => {
       inlineCodeBorder: 'rgba(255,0,0,0.15)'
     }
     localStorage.setItem('temp-custom-theme', JSON.stringify(custom))
-    await import('../../../src/core/theme/theme-loader.js')
+    await import('../../../src/core/theme/loader.js')
 
     const style = document.documentElement.style
     expect(style.getPropertyValue('--theme-primary').trim()).toBe('#ff0000')
