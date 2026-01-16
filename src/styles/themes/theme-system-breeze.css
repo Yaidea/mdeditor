@@ -201,10 +201,10 @@ body:has(.theme-system-breeze) {
 .theme-system-breeze.modern-markdown td { padding: 10px 12px; border-top: 1px solid var(--theme-border-light); }
 
 .theme-system-breeze.modern-markdown hr {
-  position: relative; height: 1px; border: none; background: linear-gradient(90deg, transparent, var(--theme-border-light), transparent); margin: 2em 0;
-}
-.theme-system-breeze.modern-markdown hr::after {
-  content: ''; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 8px; height: 8px; border-radius: 50%; background: color-mix(in oklab, var(--theme-primary) 24%, #ffffff); border: 1px solid var(--theme-border-light);
+  border: none;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, var(--theme-border-light) 20%, var(--theme-border-light) 80%, transparent 100%);
+  margin: 2rem 0;
 }
 
 .theme-system-breeze.modern-markdown img { display: block; margin: 1rem auto; border-radius: 12px; border: 1px solid var(--theme-border-light); box-shadow: 0 4px 14px rgba(0,0,0,0.06); max-width: 100%; height: auto; }
