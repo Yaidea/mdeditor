@@ -1,5 +1,5 @@
 // Table Toolbar Plugin for Milkdown WYSIWYG
-// Provides a floating toolbar when table cells are selected
+// Provides a floating toolbar when cursor is in a table
 // with common table operations: add/delete rows and columns
 
 import { Plugin, PluginKey } from '@milkdown/prose/state'
@@ -13,7 +13,6 @@ import {
   deleteRow,
   deleteTable,
   isInTable,
-  selectedRect,
   setCellAttr
 } from '@milkdown/prose/tables'
 
@@ -94,14 +93,57 @@ function executeAction(action, view) {
   const cmd = commands[action]
   if (cmd) {
     if (typeof cmd === 'function' && cmd.length === 0) {
-      // It's already a bound function (align commands)
       cmd()
     } else {
-      // It's a prosemirror command
       cmd(state, dispatch)
     }
     view.focus()
   }
+}
+
+/**
+ * Find the table element from the current selection
+ */
+function findTableFromSelection(view) {
+  const { state } = view
+  const { selection } = state
+  const { $from } = selection
+
+  // Walk up the document tree to find a table
+  for (let d = $from.depth; d > 0; d--) {
+    const node = $from.node(d)
+    if (node.type.name === 'table') {
+      // Get the position at this depth
+      const pos = $from.before(d)
+      try {
+        const domNode = view.nodeDOM(pos)
+        if (domNode && domNode.nodeName === 'TABLE') {
+          return domNode
+        }
+        // Sometimes the DOM node is a wrapper, find the table inside
+        if (domNode && domNode.querySelector) {
+          const table = domNode.querySelector('table')
+          if (table) return table
+        }
+      } catch (e) {
+        // Continue searching
+      }
+    }
+  }
+
+  // Fallback: try to find table from DOM selection
+  const domSelection = window.getSelection()
+  if (domSelection && domSelection.anchorNode) {
+    let node = domSelection.anchorNode
+    while (node && node !== view.dom) {
+      if (node.nodeName === 'TABLE') {
+        return node
+      }
+      node = node.parentElement
+    }
+  }
+
+  return null
 }
 
 /**
@@ -110,41 +152,65 @@ function executeAction(action, view) {
 function updateToolbarPosition(toolbar, view) {
   const { state } = view
 
+  // Check if cursor is in a table
   if (!isInTable(state)) {
     toolbar.style.display = 'none'
     return
   }
 
+  // Find the table element
+  const tableEl = findTableFromSelection(view)
+  if (!tableEl) {
+    toolbar.style.display = 'none'
+    return
+  }
+
   try {
-    const rect = selectedRect(state)
-    if (!rect) {
+    // Get the scrollable container (wysiwyg-rendered has overflow: auto)
+    const scrollContainer = view.dom.closest('.wysiwyg-rendered') || view.dom.parentElement
+    if (!scrollContainer) {
       toolbar.style.display = 'none'
       return
     }
 
-    // Find the table DOM element
-    const tableNode = view.domAtPos(rect.tableStart)
-    let tableEl = tableNode.node
-    while (tableEl && tableEl.nodeName !== 'TABLE') {
-      tableEl = tableEl.parentElement
-    }
-
-    if (!tableEl) {
-      toolbar.style.display = 'none'
-      return
-    }
-
-    // Get table bounding rect
+    // Get positions in viewport coordinates
     const tableRect = tableEl.getBoundingClientRect()
-    const editorRect = view.dom.getBoundingClientRect()
+    const scrollRect = scrollContainer.getBoundingClientRect()
 
-    // Position toolbar above the table
-    const top = tableRect.top - editorRect.top - 44
-    const left = tableRect.left - editorRect.left + (tableRect.width / 2)
+    // Check if table is at least partially visible in the scroll container
+    const tableVisibleTop = Math.max(tableRect.top, scrollRect.top)
+    const tableVisibleBottom = Math.min(tableRect.bottom, scrollRect.bottom)
+    if (tableVisibleBottom <= tableVisibleTop) {
+      // Table is not visible in viewport
+      toolbar.style.display = 'none'
+      return
+    }
 
+    // Toolbar dimensions (approximate)
+    const toolbarHeight = 40
+
+    // Calculate toolbar position in viewport coordinates
+    // Position toolbar above the table, within the visible scroll area
+    let toolbarTop = tableRect.top - toolbarHeight - 8
+
+    // If toolbar would be above the scroll container, position it at the top of visible area
+    if (toolbarTop < scrollRect.top) {
+      toolbarTop = scrollRect.top + 8
+    }
+
+    // If toolbar would be below visible area, clamp it
+    if (toolbarTop + toolbarHeight > scrollRect.bottom - 8) {
+      toolbarTop = scrollRect.bottom - toolbarHeight - 8
+    }
+
+    // Center horizontally relative to table
+    const toolbarLeft = tableRect.left + tableRect.width / 2
+
+    // Use fixed positioning for the toolbar so it stays in viewport
+    toolbar.style.position = 'fixed'
     toolbar.style.display = 'flex'
-    toolbar.style.top = `${Math.max(0, top)}px`
-    toolbar.style.left = `${left}px`
+    toolbar.style.top = `${toolbarTop}px`
+    toolbar.style.left = `${toolbarLeft}px`
     toolbar.style.transform = 'translateX(-50%)'
   } catch (e) {
     toolbar.style.display = 'none'
@@ -156,19 +222,27 @@ function updateToolbarPosition(toolbar, view) {
  */
 export const tableToolbarPlugin = $prose(() => {
   let toolbar = null
+  let currentView = null
 
   return new Plugin({
     key: TABLE_TOOLBAR_KEY,
 
     view(editorView) {
       toolbar = createToolbar()
+      currentView = editorView
 
-      // Insert toolbar into editor's parent
-      const parent = editorView.dom.parentElement
-      if (parent) {
-        parent.style.position = 'relative'
-        parent.appendChild(toolbar)
+      // Find the best container to attach the toolbar
+      // The editor DOM is inside .wysiwyg-rendered which is inside .preview-container
+      const container = editorView.dom.closest('.wysiwyg-rendered')
+        || editorView.dom.closest('.preview-container')
+        || editorView.dom.parentElement
+      if (container) {
+        container.style.position = 'relative'
+        container.appendChild(toolbar)
       }
+
+      // Initial check
+      setTimeout(() => updateToolbarPosition(toolbar, editorView), 100)
 
       // Handle button clicks
       toolbar.addEventListener('click', (e) => {
@@ -177,7 +251,7 @@ export const tableToolbarPlugin = $prose(() => {
           e.preventDefault()
           e.stopPropagation()
           const action = btn.dataset.action
-          executeAction(action, editorView)
+          executeAction(action, currentView)
         }
       })
 
@@ -188,6 +262,7 @@ export const tableToolbarPlugin = $prose(() => {
 
       return {
         update(view) {
+          currentView = view
           updateToolbarPosition(toolbar, view)
         },
         destroy() {
@@ -195,6 +270,7 @@ export const tableToolbarPlugin = $prose(() => {
             toolbar.parentElement.removeChild(toolbar)
           }
           toolbar = null
+          currentView = null
         }
       }
     }
