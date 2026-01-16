@@ -178,7 +178,10 @@
     "list": "无序列表",
     "orderedList": "有序列表",
     "table": "插入表格",
-    "horizontalRule": "分割线"
+    "horizontalRule": "分割线",
+    "math": "公式",
+    "mathInline": "行内公式 $...$",
+    "mathBlock": "块级公式 $$...$$"
   },
   "copyFormat": {
     "social": "公众号格式",

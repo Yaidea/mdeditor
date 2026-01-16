@@ -178,7 +178,10 @@
     "list": "Bullet list",
     "orderedList": "Numbered list",
     "table": "Insert table",
-    "horizontalRule": "Horizontal rule"
+    "horizontalRule": "Horizontal rule",
+    "math": "Formula",
+    "mathInline": "Inline Formula $...$",
+    "mathBlock": "Block Formula $$...$$"
   },
 
   "copyFormat": {
