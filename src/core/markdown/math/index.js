@@ -5,10 +5,12 @@
 
 import { detectMath, extractMath, restoreMath } from './detector.js'
 import { renderMath, renderMathPlaceholders } from './renderer.js'
+import { mathElementToImage, rasterizeMathFormulas } from './image-converter.js'
 
 // 重新导出
 export { detectMath, extractMath, restoreMath }
 export { renderMath, renderMathPlaceholders }
+export { mathElementToImage, rasterizeMathFormulas }
 
 /**
  * 处理文本中的数学公式（提取 + 渲染 + 还原）

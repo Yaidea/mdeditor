@@ -11,6 +11,7 @@ import { parseMarkdown } from '../markdown/index.js';
 import { copyToSocialClean } from './clipboard.js';
 import mermaid from 'mermaid';
 import { DOMUtils, OFFSCREEN_STYLES } from '../../shared/utils/dom.js';
+import { rasterizeMathFormulas } from '../markdown/math/image-converter.js';
 
 /**
  * 运行 mermaid，将容器内的 mermaid 元素转换为 SVG
@@ -364,6 +365,9 @@ export async function copySocialFormat(markdownText, options = {}) {
 
     // 直接将所有 Mermaid SVG 栅格化为 PNG，避开平台过滤与偏移问题
     await rasterizeMermaidSvgs(container, 2);
+
+    // 将数学公式转为 PNG，适配微信编辑器
+    await rasterizeMathFormulas(container, 2);
 
     // 5) 获取最终 HTML 并复制
     const finalHtml = container.innerHTML;
