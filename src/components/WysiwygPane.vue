@@ -33,6 +33,7 @@ import { prism } from '@milkdown/plugin-prism'
 import { math, katexOptionsCtx } from '@milkdown/plugin-math'
 import '../plugins/prism-setup.js'
 import { mathNodeViewPlugin } from '../plugins/math-nodeview.js'
+import { tableToolbarPlugin } from '../plugins/table-toolbar.js'
 
 export default {
   name: 'WysiwygPane',
@@ -113,6 +114,8 @@ export default {
         .use((await import('../plugins/mermaid-nodeview.js')).mermaidNodeViewPlugin)
         // Math NodeView plugin for editable formulas
         .use(mathNodeViewPlugin)
+        // Table toolbar plugin for table operations
+        .use(tableToolbarPlugin)
         .config((ctx) => {
           const l = ctx.get(listenerCtx)
           l.focus(() => { hasFocus.value = true })
@@ -940,6 +943,119 @@ export default {
 
 .wysiwyg-rendered :deep(.md-math--inline.is-editing::after) {
   content: 'ESC 退出';
+}
+
+/* ========== Table Toolbar Styles ========== */
+
+.md-table-toolbar {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  background: var(--theme-bg-primary, #fff);
+  border: 1px solid var(--theme-border-light, #e5e7eb);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+  user-select: none;
+}
+
+.md-table-toolbar__group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.md-table-toolbar__divider {
+  width: 1px;
+  height: 20px;
+  background: var(--theme-border-light, #e5e7eb);
+  margin: 0 4px;
+}
+
+.md-table-toolbar__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--theme-text-secondary, #6b7280);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.md-table-toolbar__btn:hover {
+  background: var(--theme-bg-tertiary, #f3f4f6);
+  color: var(--theme-primary);
+}
+
+.md-table-toolbar__btn:active {
+  transform: scale(0.95);
+}
+
+.md-table-toolbar__btn--danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.md-table-toolbar__btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Table selection styles */
+.wysiwyg-rendered :deep(.selectedCell) {
+  position: relative;
+}
+
+.wysiwyg-rendered :deep(.selectedCell::after) {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(var(--theme-primary-rgb), 0.15);
+  pointer-events: none;
+}
+
+/* Column resize handle */
+.wysiwyg-rendered :deep(.column-resize-handle) {
+  position: absolute;
+  right: -2px;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background-color: var(--theme-primary);
+  cursor: col-resize;
+  z-index: 20;
+}
+
+/* Table hover effect */
+.wysiwyg-rendered :deep(table) {
+  position: relative;
+}
+
+.wysiwyg-rendered :deep(table:hover) {
+  box-shadow: 0 0 0 2px rgba(var(--theme-primary-rgb), 0.2);
+}
+
+/* Improve table cell editing */
+.wysiwyg-rendered :deep(td),
+.wysiwyg-rendered :deep(th) {
+  position: relative;
+  min-width: 50px;
+}
+
+.wysiwyg-rendered :deep(td:focus-within),
+.wysiwyg-rendered :deep(th:focus-within) {
+  outline: 2px solid var(--theme-primary);
+  outline-offset: -2px;
 }
 </style>
 
