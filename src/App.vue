@@ -47,7 +47,12 @@
     />
 
     <!-- 通知组件 -->
-    <div v-if="notifications.length > 0" class="notification-container">
+    <div v-if="notifications.length > 0 || isCopying" class="notification-container">
+      <!-- 复制中 loading 通知 -->
+      <div v-if="isCopying" class="notification loading">
+        <span class="loading-spinner"></span>
+        <span>正在处理内容...</span>
+      </div>
       <div
         v-for="notification in notifications"
         :key="notification.id"
@@ -97,6 +102,7 @@ const {
   notifications,
   selectedCopyFormat,
   copyFormatOptions,
+  isCopying,
 
   // 计算属性
   hasContent,

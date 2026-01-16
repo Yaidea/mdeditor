@@ -31,6 +31,7 @@ export function useClipboard(options = {}) {
   // 状态
   const copyFormatOptions = ref(getCopyFormatOptions())
   const selectedCopyFormat = ref(copyFormatOptions.value[0]) // 存储选中项对象以保持向后兼容
+  const isCopying = ref(false) // 复制操作进行中状态
 
   /**
    * 获取当前有效的颜色主题（包括临时自定义主题）
@@ -54,6 +55,9 @@ export function useClipboard(options = {}) {
         onNotify?.('请先编辑内容', 'warning')
         return
       }
+
+      // 设置复制中状态
+      isCopying.value = true
 
       // 使用 requestAnimationFrame 确保UI更新不会引起抖动
       await new Promise(resolve => requestAnimationFrame(resolve))
@@ -101,11 +105,17 @@ export function useClipboard(options = {}) {
           result = { success: false, message: '未知的复制格式' }
       }
 
+      // 重置复制中状态
+      isCopying.value = false
+
       // 延迟显示通知，避免与复制操作冲突
       setTimeout(() => {
         onNotify?.(result.message, result.success ? 'success' : 'error')
       }, 50)
     } catch (error) {
+      // 重置复制中状态
+      isCopying.value = false
+
       setTimeout(() => {
         onNotify?.('❌ 复制失败: ' + error.message, 'error')
       }, 50)
@@ -162,6 +172,7 @@ export function useClipboard(options = {}) {
     // 状态
     copyFormatOptions,
     selectedCopyFormat,
+    isCopying,
 
     // 方法
     handleCopyFormatSelect,

@@ -81,6 +81,7 @@ export function useAppState() {
     // 剪贴板功能 (来自 useClipboard)
     copyFormatOptions: clipboard.copyFormatOptions,
     selectedCopyFormat: clipboard.selectedCopyFormat,
+    isCopying: clipboard.isCopying,
     handleCopyFormatSelect: clipboard.handleCopyFormatSelect,
 
     // 其他功能
