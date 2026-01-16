@@ -122,6 +122,28 @@ export function createToolbarConfig(editorOperations) {
     // 分割线
     { type: 'divider' },
 
+    // 公式组
+    {
+      type: 'group',
+      items: [
+        {
+          id: 'inlineMath',
+          title: t('toolbar.mathInline'),
+          icon: 'M19.05,21.6L15.67,18.22L12.95,20.94L11.54,19.54L14.26,16.81L10.88,13.44L12.3,12L15.68,15.4L18.4,12.67L19.81,14.08L17.09,16.81L20.47,20.19L19.05,21.6M5,4H7V2H9V4H11V6H9V14.42C9.78,14.89 10.28,15.76 10.18,16.75C10.07,17.94 9.05,18.92 7.86,18.97C6.41,19.03 5.2,17.88 5.03,16.5C4.88,15.34 5.53,14.31 6.5,13.86V4H5V2H7V4H5M11,6H7V4H5V14.03C5,15.13 5.67,16.32 6.61,17.03H5V19H11V17H10.22C10.95,15.85 11,14.5 11,14V6Z',
+          action: () => editorOperations.inlineMath()
+        },
+        {
+          id: 'blockMath',
+          title: t('toolbar.mathBlock'),
+          icon: 'M3,4C1.89,4 1,4.89 1,6V18C1,19.1 1.9,20 3,20H11V18H3V6H11V4H3M12,8V10H14V8H12M14,10V12H16V10H14M16,12V14H18V12H16M16,8V10H18V8H16M12,12V14H14V12H12M14,14V16H16V14H14M12,16V18H14V16H12M18,14V16H20V14H18M18,16V18H20V16H18M20,14H22V12H20V14M14,18H16V16H14V18M20,8H18V10H20V8M20,10V12H22V10H20M22,6H20V8H22V6M16,16H18V14H16V16Z',
+          action: () => editorOperations.blockMath()
+        }
+      ]
+    },
+
+    // 分割线
+    { type: 'divider' },
+
     // 列表和引用组
     {
       type: 'group',
@@ -178,6 +200,8 @@ export const defaultToolbarItems = [
   { id: 'image', title: '插入图片', group: 'media' },
   { id: 'code', title: '行内代码', group: 'code' },
   { id: 'codeBlock', title: '代码块', group: 'code' },
+  { id: 'inlineMath', title: '行内公式', group: 'math' },
+  { id: 'blockMath', title: '块级公式', group: 'math' },
   { id: 'quote', title: '引用', group: 'list' },
   { id: 'list', title: '无序列表', group: 'list' },
   { id: 'orderedList', title: '有序列表', group: 'list' },

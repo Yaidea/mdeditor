@@ -302,6 +302,29 @@ export const insertHorizontalRule = (editorView) => {
   insertText(editorView, `\n${MARKDOWN_SYNTAX.HORIZONTAL_RULE}\n`, '', '');
 };
 
+/** 插入行内数学公式 */
+export const insertInlineMath = (editorView) => {
+  insertText(editorView, '$', '$', PLACEHOLDER_TEXT.FORMULA || '公式');
+};
+
+/** 插入块级数学公式 */
+export const insertBlockMath = (editorView) => {
+  if (!editorView) return;
+
+  const selectionInfo = getSelectionInfo(editorView);
+  const content = selectionInfo.selectedText || (PLACEHOLDER_TEXT.FORMULA || '公式');
+  const newText = `$$\n${content}\n$$`;
+
+  const newSelection = {
+    anchor: selectionInfo.selection.from + 3,
+    head: selectionInfo.selection.from + 3 + content.length
+  };
+
+  const transaction = createEditorTransaction(selectionInfo.selection, newText, newSelection);
+  editorView.dispatch(transaction);
+  ensureEditorFocus(editorView);
+};
+
 /**
  * 将所有操作函数映射到一个对象中，供工具栏使用。
  * key 的名称应与工具栏配置中的 `type` 相对应。
@@ -319,5 +342,7 @@ export const toolbarOperations = {
   link: insertLink,
   image: insertImage,
   table: insertTable,
-  horizontalRule: insertHorizontalRule
+  horizontalRule: insertHorizontalRule,
+  inlineMath: insertInlineMath,
+  blockMath: insertBlockMath
 };
