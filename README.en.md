@@ -45,9 +45,13 @@
 
 ![](https://xiaobox-public-images.oss-cn-beijing.aliyuncs.com/images20250810144616512.png)
 
-### Mermaid support
+### Mermaid diagram support
 
 ![](https://xiaobox-public-images.oss-cn-beijing.aliyuncs.com/images20250814231133156.png)
+
+### LaTeX math formula support
+
+Supports inline formulas `$E=mc^2$` and block formulas `$$...$$`, rendered to SVG via MathJax 3, fully compatible with WeChat Official Accounts.
 
 ### Settings panel (Theme / Code style / Font / Spacing)
 
@@ -69,6 +73,11 @@
   - Mermaid node view supported; table cells with backticks have targeted compatibility fixes for display and copy.
   - Unified with the theme/code-style/typography system.
   - One-click viewport switch: desktop / tablet / mobile.
+- LaTeX math formula support
+  - Inline formulas: wrap with single dollar sign `$E=mc^2$`.
+  - Block formulas: wrap with double dollar signs `$$...$$`, supports multi-line.
+  - Rendered to SVG via MathJax 3 for perfect WeChat compatibility.
+  - Formulas are auto-styled when copying to WeChat — no extra adjustments needed.
 - One-click copy as WeChat/social HTML
   - Automatic inline styles (font family/size, line height, letter spacing, palette).
   - Themed adaptations and detail polish (headings, lists, quotes, code, tables, etc.).
