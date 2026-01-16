@@ -64,6 +64,7 @@ export const PLACEHOLDER_TEXT = Object.freeze({
   CODE_BLOCK: '在这里输入代码',
   QUOTE: '引用内容',
   LIST_ITEM: '列表项',
+  FORMULA: 'a^2 + b^2 = c^2',
   LINK_TEXT: '链接文本',
   LINK_URL: 'https://',
   IMAGE_ALT: '图片描述',

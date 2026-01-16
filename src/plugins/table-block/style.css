@@ -1,0 +1,271 @@
+/* Table Block Plugin Styles
+ * Based on Milkdown Crepe table.css
+ */
+
+/* The wrapper is a zero-size fixed element that acts as a positioning anchor */
+.milkdown-table-block {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+/* Table cells styling - only applies inside milkdown-table-block if table is moved there */
+/* These are kept for reference but likely not used since table stays in editor */
+
+/* Selected cell styling */
+.milkdown-table-block .selectedCell::after {
+  background-color: var(--theme-primary, #3b82f6);
+  opacity: 0.2;
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+/* Drag preview */
+.milkdown-table-block .drag-preview {
+  background-color: var(--theme-bg-primary, #fff);
+  opacity: 0.6;
+  position: fixed;
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+  outline: 2px solid var(--theme-primary, #3b82f6);
+  outline-offset: -1px;
+  border-radius: 4px;
+  pointer-events: none;
+}
+
+.milkdown-table-block .drag-preview[data-show='false'] {
+  display: none;
+}
+
+.milkdown-table-block .drag-preview th,
+.milkdown-table-block .drag-preview td {
+  background-color: var(--theme-bg-primary, #fff);
+}
+
+/* Handle base styles - all handles use fixed positioning */
+.milkdown-table-block .handle {
+  position: fixed;
+  font-size: 14px;
+  transition: opacity ease-in-out 0.15s;
+  z-index: 1000;
+  pointer-events: auto;
+}
+
+.milkdown-table-block .handle[data-show='false'] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.milkdown-table-block .handle svg {
+  fill: var(--theme-text-tertiary, #9ca3af);
+}
+
+/* Cell handle (row/column drag handle) */
+.milkdown-table-block .cell-handle {
+  cursor: grab;
+  background-color: var(--theme-bg-primary, #fff);
+  color: var(--theme-text-tertiary, #9ca3af);
+  border-radius: 100px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  transition: background-color 0.2s ease-in-out, opacity 0.15s ease-in-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.milkdown-table-block .cell-handle:hover {
+  background-color: var(--theme-bg-tertiary, #f3f4f6);
+}
+
+.milkdown-table-block .cell-handle:has(.button-group:hover) {
+  background-color: var(--theme-bg-primary, #fff);
+}
+
+/* Column drag handle - positioned above cell, centered on top border */
+.milkdown-table-block .cell-handle[data-role='col-drag-handle'] {
+  padding: 4px 10px;
+  min-width: 36px;
+  height: 24px;
+}
+
+.milkdown-table-block .cell-handle[data-role='col-drag-handle'] .handle-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Row drag handle - positioned left of row, centered on left border */
+.milkdown-table-block .cell-handle[data-role='row-drag-handle'] {
+  padding: 10px 4px;
+  width: 24px;
+  min-height: 36px;
+}
+
+.milkdown-table-block .cell-handle[data-role='row-drag-handle'] .handle-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: rotate(90deg);
+}
+
+/* Button group (alignment, delete buttons) */
+.milkdown-table-block .button-group {
+  position: absolute;
+  transform: translateX(-50%);
+  left: 50%;
+  bottom: calc(100% + 8px);
+  display: flex;
+  background-color: var(--theme-bg-primary, #fff);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 4px;
+}
+
+.milkdown-table-block .button-group::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  right: 0;
+  height: 8px;
+  background-color: transparent;
+}
+
+.milkdown-table-block .button-group[data-show='false'] {
+  display: none;
+}
+
+.milkdown-table-block .button-group button {
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--theme-text-secondary, #6b7280);
+  transition: all 0.15s ease;
+}
+
+.milkdown-table-block .button-group button svg {
+  width: 20px;
+  height: 20px;
+}
+
+.milkdown-table-block .button-group button:hover {
+  background-color: var(--theme-bg-tertiary, #f3f4f6);
+  color: var(--theme-primary, #3b82f6);
+}
+
+.milkdown-table-block .button-group button:active {
+  background-color: rgba(var(--theme-primary-rgb, 59, 130, 246), 0.15);
+}
+
+/* Row handle button group position */
+.milkdown-table-block .cell-handle[data-role='row-drag-handle'] .button-group {
+  left: calc(100% + 8px);
+  bottom: auto;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.milkdown-table-block .cell-handle[data-role='row-drag-handle'] .button-group::after {
+  display: none;
+}
+
+/* Line handle (for adding rows/columns) */
+.milkdown-table-block .line-handle {
+  position: fixed;
+  z-index: 999;
+  background-color: var(--theme-primary, #3b82f6);
+  pointer-events: auto;
+}
+
+.milkdown-table-block .line-handle:hover {
+  opacity: 1;
+}
+
+/* Add button on line handle */
+.milkdown-table-block .line-handle .add-button {
+  cursor: pointer;
+  background-color: var(--theme-bg-primary, #fff);
+  color: var(--theme-text-tertiary, #9ca3af);
+  border-radius: 100px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  transition: all 0.2s ease-in-out;
+  border: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.milkdown-table-block .line-handle .add-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.milkdown-table-block .line-handle .add-button:hover {
+  background-color: var(--theme-bg-tertiary, #f3f4f6);
+  color: var(--theme-primary, #3b82f6);
+}
+
+.milkdown-table-block .line-handle .add-button:active {
+  background-color: rgba(var(--theme-primary-rgb, 59, 130, 246), 0.15);
+}
+
+/* Horizontal line handle (for adding rows) */
+.milkdown-table-block .line-handle[data-role='x-line-drag-handle'] {
+  height: 2px;
+}
+
+.milkdown-table-block .line-handle[data-role='x-line-drag-handle'] .add-button {
+  position: absolute;
+  left: -14px;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 6px 0;
+  width: 20px;
+  height: 28px;
+}
+
+/* Vertical line handle (for adding columns) */
+.milkdown-table-block .line-handle[data-role='y-line-drag-handle'] {
+  width: 2px;
+}
+
+.milkdown-table-block .line-handle[data-role='y-line-drag-handle'] .add-button {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0 6px;
+  width: 28px;
+  height: 20px;
+}
+
+/* Indicator mode (during drag) - hide the add button */
+.milkdown-table-block .line-handle[data-display-type='indicator'] .add-button {
+  display: none;
+}
+
+/* Table wrapper - not used when handles are fixed positioned */
+.milkdown-table-block .table-wrapper {
+  position: relative;
+}
+
+/* Hide handles in readonly mode */
+.milkdown-table-block.readonly .handle {
+  display: none;
+}

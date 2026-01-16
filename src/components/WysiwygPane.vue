@@ -1,10 +1,34 @@
 <template>
   <div class="wysiwyg-pane">
-    <div class="preview-toolbar">
-      <div class="preview-mode-selector">
-        <label class="mode-label">所见即所得</label>
+    <div class="editor-toolbar">
+      <div class="toolbar-left">
+        <template v-for="(group, groupIndex) in toolbarConfig" :key="groupIndex">
+          <div v-if="group.type === 'group'" class="toolbar-group">
+            <ToolbarButton
+              v-for="item in group.items"
+              :key="item.id"
+              :title="item.title"
+              :icon="item.icon"
+              :width="item.width"
+              :height="item.height"
+              @click="item.action"
+            />
+          </div>
+          <div v-else-if="group.type === 'divider'" class="toolbar-divider"></div>
+          <ToolbarButton
+            v-else
+            :key="group.id"
+            :title="group.title"
+            :icon="group.icon"
+            :width="group.width"
+            :height="group.height"
+            @click="group.action"
+          />
+        </template>
       </div>
-      <div class="viewport-info"></div>
+      <div class="toolbar-right">
+        <!-- 工具栏右侧预留 -->
+      </div>
     </div>
 
     <div class="preview-container" :class="[`theme-system-${currentLayoutId}`]">
@@ -18,25 +42,46 @@
 </template>
 
 <script>
-import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { useGlobalThemeManager } from '../composables/index.js'
+import { createToolbarConfig } from '../config/toolbar.js'
+import { EDITOR_OPERATIONS, PLACEHOLDER_TEXT } from '../config/constants/index.js'
+import ToolbarButton from './ToolbarButton.vue'
 
 // Milkdown core & plugins
-import { Editor, defaultValueCtx, rootCtx } from '@milkdown/core'
-import { commonmark } from '@milkdown/preset-commonmark'
-import { gfm } from '@milkdown/preset-gfm'
+import { Editor, commandsCtx, defaultValueCtx, editorViewCtx, rootCtx, schemaCtx } from '@milkdown/core'
+import {
+  commonmark,
+  createCodeBlockCommand,
+  insertHrCommand,
+  insertImageCommand,
+  toggleEmphasisCommand,
+  toggleInlineCodeCommand,
+  toggleLinkCommand,
+  toggleStrongCommand,
+  wrapInBlockquoteCommand,
+  wrapInBulletListCommand,
+  wrapInHeadingCommand,
+  wrapInOrderedListCommand
+} from '@milkdown/preset-commonmark'
+import { gfm, insertTableCommand, toggleStrikethroughCommand } from '@milkdown/preset-gfm'
 import { clipboard } from '@milkdown/plugin-clipboard'
 import { history } from '@milkdown/plugin-history'
 import { listener, listenerCtx } from '@milkdown/plugin-listener'
 import { replaceAll, getMarkdown } from '@milkdown/utils'
 import { prism } from '@milkdown/plugin-prism'
 import { math, katexOptionsCtx } from '@milkdown/plugin-math'
+import { TextSelection } from '@milkdown/prose/state'
 import '../plugins/prism-setup.js'
 import { mathNodeViewPlugin } from '../plugins/math-nodeview.js'
-import { tableToolbarPlugin } from '../plugins/table-toolbar.js'
+import { tableBlockPlugin } from '../plugins/table-block/index.js'
+import '../plugins/table-block/style.css'
 
 export default {
   name: 'WysiwygPane',
+  components: {
+    ToolbarButton
+  },
   props: {
     modelValue: {
       type: String,
@@ -87,6 +132,92 @@ export default {
       }
     }
 
+    const runCommand = (command, payload) => {
+      const editor = editorRef.value
+      if (!editor) return
+      editor.action((ctx) => {
+        const commands = ctx.get(commandsCtx)
+        if (typeof payload === 'undefined') {
+          commands.call(command.key)
+        } else {
+          commands.call(command.key, payload)
+        }
+        ctx.get(editorViewCtx).focus()
+      })
+    }
+
+    const insertMathNode = (isBlock) => {
+      const editor = editorRef.value
+      if (!editor) return
+      const formula = PLACEHOLDER_TEXT.FORMULA || '公式'
+      editor.action((ctx) => {
+        const view = ctx.get(editorViewCtx)
+        const schema = ctx.get(schemaCtx)
+        const nodeType = isBlock ? schema.nodes.math_block : schema.nodes.math_inline
+        if (!nodeType) return
+        const node = isBlock
+          ? nodeType.create({ value: formula })
+          : nodeType.create(null, schema.text(formula))
+        if (!node) return
+        const tr = view.state.tr.replaceSelectionWith(node)
+        view.dispatch(tr.scrollIntoView())
+        view.focus()
+      })
+    }
+
+    const insertLink = () => {
+      const editor = editorRef.value
+      if (!editor) return
+      const href = PLACEHOLDER_TEXT.LINK_URL || 'https://'
+      const label = PLACEHOLDER_TEXT.LINK_TEXT || '链接文本'
+      editor.action((ctx) => {
+        const view = ctx.get(editorViewCtx)
+        const { from, to, empty } = view.state.selection
+        if (!empty) {
+          ctx.get(commandsCtx).call(toggleLinkCommand.key, { href })
+          view.focus()
+          return
+        }
+        const schema = ctx.get(schemaCtx)
+        const linkMark = schema.marks.link
+        if (!linkMark) return
+        const mark = linkMark.create({ href })
+        let tr = view.state.tr.insertText(label, from, to)
+        if (mark) {
+          tr = tr.addMark(from, from + label.length, mark)
+        }
+        tr = tr.setSelection(TextSelection.create(tr.doc, from + label.length))
+        view.dispatch(tr.scrollIntoView())
+        view.focus()
+      })
+    }
+
+    const wysiwygOperations = {
+      heading: (level) => runCommand(wrapInHeadingCommand, level),
+      bold: () => runCommand(toggleStrongCommand),
+      italic: () => runCommand(toggleEmphasisCommand),
+      strikethrough: () => runCommand(toggleStrikethroughCommand),
+      code: () => runCommand(toggleInlineCodeCommand),
+      codeBlock: () => runCommand(createCodeBlockCommand),
+      quote: () => runCommand(wrapInBlockquoteCommand),
+      list: () => runCommand(wrapInBulletListCommand),
+      orderedList: () => runCommand(wrapInOrderedListCommand),
+      link: insertLink,
+      image: () => runCommand(insertImageCommand, {
+        src: PLACEHOLDER_TEXT.IMAGE_URL || 'https://',
+        alt: PLACEHOLDER_TEXT.IMAGE_ALT || '图片描述'
+      }),
+      table: () => runCommand(insertTableCommand, {
+        row: EDITOR_OPERATIONS.TABLE_DEFAULTS.ROWS,
+        col: EDITOR_OPERATIONS.TABLE_DEFAULTS.COLS
+      }),
+      horizontalRule: () => runCommand(insertHrCommand),
+      inlineMath: () => insertMathNode(false),
+      blockMath: () => insertMathNode(true)
+    }
+
+    const toolbarConfig = computed(() => createToolbarConfig(wysiwygOperations))
+
     const createEditor = async () => {
       if (!editorRoot.value) return
 
@@ -114,8 +245,8 @@ export default {
         .use((await import('../plugins/mermaid-nodeview.js')).mermaidNodeViewPlugin)
         // Math NodeView plugin for editable formulas
         .use(mathNodeViewPlugin)
-        // Table toolbar plugin for table operations
-        .use(tableToolbarPlugin)
+        // Table block plugin for Milkdown-style table editing
+        .use(tableBlockPlugin)
         .config((ctx) => {
           const l = ctx.get(listenerCtx)
           l.focus(() => { hasFocus.value = true })
@@ -248,7 +379,8 @@ export default {
     return {
       editorRoot,
       currentLayoutId,
-      getPreviewClasses
+      getPreviewClasses,
+      toolbarConfig
     }
   }
 }
@@ -946,70 +1078,7 @@ export default {
   content: 'ESC 退出';
 }
 
-/* ========== Table Toolbar Styles ========== */
-
-.md-table-toolbar {
-  position: absolute;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 6px 8px;
-  background: var(--theme-bg-primary, #fff);
-  border: 1px solid var(--theme-border-light, #e5e7eb);
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 100;
-  user-select: none;
-}
-
-.md-table-toolbar__group {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-}
-
-.md-table-toolbar__divider {
-  width: 1px;
-  height: 20px;
-  background: var(--theme-border-light, #e5e7eb);
-  margin: 0 4px;
-}
-
-.md-table-toolbar__btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  border: none;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--theme-text-secondary, #6b7280);
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.md-table-toolbar__btn:hover {
-  background: var(--theme-bg-tertiary, #f3f4f6);
-  color: var(--theme-primary);
-}
-
-.md-table-toolbar__btn:active {
-  transform: scale(0.95);
-}
-
-.md-table-toolbar__btn--danger:hover {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
-}
-
-.md-table-toolbar__btn svg {
-  width: 16px;
-  height: 16px;
-}
-
-/* Table selection styles */
+/* ========== Table Selection Styles ========== */
 .wysiwyg-rendered :deep(.selectedCell) {
   position: relative;
 }
@@ -1059,4 +1128,3 @@ export default {
   outline-offset: -2px;
 }
 </style>
-
