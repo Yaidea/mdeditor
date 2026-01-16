@@ -121,6 +121,7 @@
       "lists": "列表",
       "linksImages": "链接和图片",
       "code": "代码块",
+      "math": "数学公式",
       "table": "表格",
       "misc": "其他语法"
     },
@@ -150,6 +151,10 @@
     "content3": "内容 3",
     "hr": "分割线",
     "escape": "转义字符",
+    "mathInline": "行内公式",
+    "mathBlock": "块级公式",
+    "mathHelp": "更多 LaTeX 语法请参考官方文档：",
+    "mathDocs": "语法参考",
     "samples": {
       "item1": "项目 1",
       "item2": "项目 2",

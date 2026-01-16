@@ -121,6 +121,7 @@
       "lists": "Lists",
       "linksImages": "Links & Images",
       "code": "Code Blocks",
+      "math": "Math Formulas",
       "table": "Table",
       "misc": "Other Syntax"
     },
@@ -150,6 +151,10 @@
     "content3": "Content 3",
     "hr": "Horizontal rule",
     "escape": "Escape characters",
+    "mathInline": "Inline formula",
+    "mathBlock": "Block formula",
+    "mathHelp": "For more LaTeX syntax, see the official docs:",
+    "mathDocs": "Syntax Reference",
     "samples": {
       "item1": "Item 1",
       "item2": "Item 2",

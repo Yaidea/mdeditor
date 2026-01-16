@@ -21,6 +21,7 @@ import {
 } from './inline-formatter.js';
 import { formatCodeBlock } from './code-formatter.js';
 import { SocialStyler } from './social-adapters.js';
+import { renderMath } from './math/index.js';
 
 function getBaseFontSize(fontSettings) {
   return fontSettings?.fontSize || 16;
@@ -48,6 +49,14 @@ function isBlockquoteLine(trimmedLine) {
   return trimmedLine.startsWith('>');
 }
 
+function isMathBlockStart(trimmedLine) {
+  return trimmedLine === '$$';
+}
+
+function isMathBlockEnd(trimmedLine) {
+  return trimmedLine === '$$';
+}
+
 function createContext({ colorTheme, codeTheme, themeSystem, fontSettings, options }) {
   return {
     currentTheme: colorTheme || defaultColorTheme,
@@ -62,7 +71,9 @@ function createContext({ colorTheme, codeTheme, themeSystem, fontSettings, optio
     codeBlockContent: '',
     codeBlockLanguage: '',
     inBlockquote: false,
-    blockquoteContent: []
+    blockquoteContent: [],
+    inMathBlock: false,
+    mathBlockContent: ''
   };
 }
 
@@ -87,6 +98,31 @@ function endCodeBlock(context) {
 
 function addCodeBlockLine(context, line) {
   context.codeBlockContent += line + '\n';
+}
+
+function startMathBlock(context) {
+  context.inMathBlock = true;
+  context.mathBlockContent = '';
+}
+
+function endMathBlock(context) {
+  const latex = context.mathBlockContent.trim();
+  context.inMathBlock = false;
+  context.mathBlockContent = '';
+  return latex;
+}
+
+function addMathBlockLine(context, line) {
+  if (context.mathBlockContent) {
+    context.mathBlockContent += '\n';
+  }
+  context.mathBlockContent += line;
+}
+
+function formatMathBlock(latex, theme, fontSettings = null) {
+  const html = renderMath(latex, true);
+  const fontSize = fontSettings?.fontSize || 16;
+  return `<div style="margin: 16px 0; text-align: center; font-size: ${fontSize}px; overflow-x: auto;">${html}</div>`;
 }
 
 function startBlockquote(context) {
@@ -1037,6 +1073,20 @@ export function parseMarkdown(markdownText, options = {}) {
       continue;
     }
 
+    // 处理块级数学公式
+    if (context.inMathBlock) {
+      if (isMathBlockEnd(trimmedLine)) {
+        const latex = endMathBlock(context);
+        if (latex) {
+          result += formatMathBlock(latex, context.currentTheme, context.fontSettings);
+        }
+      } else {
+        addMathBlockLine(context, line);
+      }
+      i++;
+      continue;
+    }
+
     if (!trimmedLine) {
       if (context.inBlockquote) {
         addBlockquoteLine(context, '');
@@ -1053,6 +1103,13 @@ export function parseMarkdown(markdownText, options = {}) {
     if (isCodeBlockFence(trimmedLine)) {
       const language = trimmedLine.replace(MARKDOWN_SYNTAX.CODE_BLOCK, '').trim();
       startCodeBlock(context, language);
+      i++;
+      continue;
+    }
+
+    // 检测块级数学公式开始
+    if (isMathBlockStart(trimmedLine)) {
+      startMathBlock(context);
       i++;
       continue;
     }
@@ -1113,6 +1170,13 @@ export function parseMarkdown(markdownText, options = {}) {
   }
   if (context.inBlockquote) {
     result += endBlockquote(context);
+  }
+  // 处理未闭合的 math block
+  if (context.inMathBlock) {
+    const latex = endMathBlock(context);
+    if (latex) {
+      result += formatMathBlock(latex, context.currentTheme, context.fontSettings);
+    }
   }
 
   result = applyThemeStyles(result, { colorTheme, themeSystem, isPreview: options.isPreview });

@@ -251,6 +251,53 @@
                 </div>
               </section>
 
+              <!-- 数学公式 -->
+              <section class="guide-section">
+                <div class="section-header">
+                  <div class="section-icon">
+                    <svg viewBox="0 0 24 24" width="20" height="20">
+                      <path fill="currentColor" d="M19,3H5C3.89,3 3,3.89 3,5V19C3,20.1 3.9,21 5,21H19C20.1,21 21,20.1 21,19V5C21,3.89 20.1,3 19,3M11.5,18H9.5L7,10.5L4.5,18H2.5L6,7H8L11.5,18M21,11H19.5V9.5H18.5V11H17V12H18.5V13.5H19.5V12H21V11Z"/>
+                    </svg>
+                  </div>
+                  <h3>{{ $t('guide.sections.math') }}</h3>
+                </div>
+                <div class="syntax-list">
+                  <!-- 行内公式 -->
+                  <div class="syntax-item">
+                    <div class="syntax-left">
+                      <h4>{{ $t('guide.mathInline') }}</h4>
+                      <code>$E = mc^2$</code>
+                    </div>
+                    <div class="syntax-right">
+                      <p class="demo-math-inline">E = mc²</p>
+                    </div>
+                  </div>
+
+                  <!-- 块级公式 -->
+                  <div class="syntax-item">
+                    <div class="syntax-left">
+                      <h4>{{ $t('guide.mathBlock') }}</h4>
+                      <code>$$<br>x = \frac{-b \pm \sqrt{b^2-4ac}}{2a}<br>$$</code>
+                    </div>
+                    <div class="syntax-right">
+                      <div class="demo-math-block">
+                        <span class="math-formula">x = (-b ± √(b²-4ac)) / 2a</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- 常用语法链接 -->
+                  <div class="syntax-item syntax-item-full">
+                    <div class="math-help">
+                      <p>{{ $t('guide.mathHelp') }}</p>
+                      <a href="https://katex.org/docs/supported" target="_blank" rel="noopener noreferrer" class="demo-link">
+                        KaTeX {{ $t('guide.mathDocs') }} ↗
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
               <!-- 表格 -->
               <section class="guide-section">
                 <div class="section-header">
