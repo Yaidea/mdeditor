@@ -96,6 +96,7 @@ export default {
     const hasFocus = ref(false)
     const lastEmittedMarkdown = ref(props.modelValue || '')
     const lastEmittedNormalized = ref('')
+    const pendingMarkdown = ref(null) // 保存待发送的 Markdown，用于组件销毁时发送挂起的更新
     let emitTimer = null
 
     const toPlainMarkdown = (md = '') => {
@@ -256,10 +257,13 @@ export default {
             const plain = toPlainMarkdown(markdown)
             const normalized = normalizeMarkdown(plain)
             if (normalized === lastEmittedNormalized.value) return
+            // 保存待发送的内容，以便组件销毁时可以立即发送
+            pendingMarkdown.value = plain
             if (emitTimer) clearTimeout(emitTimer)
             emitTimer = setTimeout(() => {
               lastEmittedMarkdown.value = plain
               lastEmittedNormalized.value = normalized
+              pendingMarkdown.value = null // 已发送，清除挂起状态
               emit('update:modelValue', plain)
             }, 60)
           })
@@ -305,6 +309,17 @@ export default {
     })
 
     onBeforeUnmount(() => {
+      // 关键修复：如果有挂起的防抖更新，在组件销毁前立即发送
+      // 这确保了用户在 WYSIWYG 中的修改（如表格编辑）不会因为防抖延迟而丢失
+      if (emitTimer) {
+        clearTimeout(emitTimer)
+        emitTimer = null
+        // 发送挂起的更新：使用 pendingMarkdown 而不是重新获取
+        if (pendingMarkdown.value !== null && pendingMarkdown.value !== lastEmittedMarkdown.value) {
+          emit('update:modelValue', pendingMarkdown.value)
+        }
+      }
+
       const editor = editorRef.value
       if (editor && typeof editor.destroy === 'function') {
         editor.destroy()
@@ -313,11 +328,6 @@ export default {
       if (inlineCodeObserver) {
         inlineCodeObserver.disconnect()
         inlineCodeObserver = null
-      }
-      // 清理可能未触发的节流定时器，避免内存泄漏
-      if (emitTimer) {
-        clearTimeout(emitTimer)
-        emitTimer = null
       }
     })
 
