@@ -14,38 +14,86 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 16px;
+  padding: 8px 12px;
   background-color: var(--bg-secondary);
   border-bottom: 1px solid var(--border-light);
-  height: 56px;
+  min-height: 52px;
   box-sizing: border-box;
+  gap: 8px;
 }
 
 .toolbar-left {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   flex: 1;
+  min-width: 0;
   overflow-x: auto;
+  overflow-y: hidden;
+  padding: 4px 0;
+  /* 平滑滚动 */
+  scroll-behavior: smooth;
+  /* 自定义滚动条 */
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-medium) transparent;
+}
+
+/* Webkit 滚动条样式 */
+.toolbar-left::-webkit-scrollbar {
+  height: 4px;
+}
+
+.toolbar-left::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.toolbar-left::-webkit-scrollbar-thumb {
+  background-color: var(--border-medium);
+  border-radius: 4px;
+}
+
+.toolbar-left::-webkit-scrollbar-thumb:hover {
+  background-color: var(--border-heavy);
+}
+
+/* 滚动渐变指示器 */
+.toolbar-left::after {
+  content: '';
+  position: sticky;
+  right: 0;
+  flex-shrink: 0;
+  width: 24px;
+  height: 100%;
+  background: linear-gradient(to left, var(--bg-secondary), transparent);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.toolbar-left:hover::after {
+  opacity: 1;
 }
 
 .toolbar-right {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
 .toolbar-group {
   display: flex;
   align-items: center;
-  gap: 3px;
+  gap: 2px;
+  flex-shrink: 0;
 }
 
 .toolbar-divider {
   width: 1px;
-  height: 24px;
+  height: 20px;
   background-color: var(--border-light);
-  margin: 0 8px;
+  margin: 0 6px;
+  flex-shrink: 0;
 }
 
 /* 工具栏按钮 - Neumorphism 风格 */
@@ -53,32 +101,32 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border: none;
-  border-radius: 10px;
+  border-radius: 8px;
   background: #e8e8eb;
   color: var(--theme-primary);
   cursor: pointer;
-  transition: all 0.2s ease;
-  margin: 10px 0;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
   box-shadow:
-    5px 5px 10px rgba(163, 177, 198, 0.7),
-    -5px -5px 10px rgba(255, 255, 255, 0.9);
+    3px 3px 6px rgba(163, 177, 198, 0.6),
+    -3px -3px 6px rgba(255, 255, 255, 0.8);
 }
 
 .toolbar-btn:hover {
   color: var(--theme-primary-hover);
   box-shadow:
-    inset 3px 3px 6px rgba(163, 177, 198, 0.5),
-    inset -3px -3px 6px rgba(255, 255, 255, 0.8);
+    inset 2px 2px 4px rgba(163, 177, 198, 0.4),
+    inset -2px -2px 4px rgba(255, 255, 255, 0.7);
 }
 
 .toolbar-btn:active {
   color: var(--theme-primary-dark);
   box-shadow:
-    inset 4px 4px 8px rgba(163, 177, 198, 0.6),
-    inset -4px -4px 8px rgba(255, 255, 255, 0.9);
+    inset 3px 3px 5px rgba(163, 177, 198, 0.5),
+    inset -3px -3px 5px rgba(255, 255, 255, 0.8);
 }
 
 .toolbar-btn:disabled {
@@ -86,35 +134,35 @@
   cursor: not-allowed;
   color: #9ca3af;
   box-shadow:
-    2px 2px 4px rgba(163, 177, 198, 0.3),
-    -2px -2px 4px rgba(255, 255, 255, 0.5);
+    1px 1px 3px rgba(163, 177, 198, 0.3),
+    -1px -1px 3px rgba(255, 255, 255, 0.5);
 }
 
 .toolbar-btn svg {
-  width: 20px;
-  height: 20px;
-  transition: all 0.2s ease;
+  width: 18px;
+  height: 18px;
+  transition: all 0.15s ease;
 }
 
 .toolbar-btn:hover svg {
-  transform: scale(1.05);
+  transform: scale(1.08);
 }
 
 .toolbar-btn-guide {
   background: var(--theme-primary);
   color: white;
   box-shadow:
-    inset 2px 2px 4px rgba(0, 0, 0, 0.2),
-    inset -2px -2px 4px rgba(255, 255, 255, 0.1),
-    0 0 15px rgba(var(--theme-primary-rgb), 0.3);
+    inset 1px 1px 3px rgba(0, 0, 0, 0.15),
+    inset -1px -1px 3px rgba(255, 255, 255, 0.08),
+    0 0 10px rgba(var(--theme-primary-rgb), 0.25);
 }
 
 .toolbar-btn-guide:hover {
   background: var(--theme-primary-hover);
   box-shadow:
-    inset 1px 1px 2px rgba(0, 0, 0, 0.15),
+    inset 1px 1px 2px rgba(0, 0, 0, 0.12),
     inset -1px -1px 2px rgba(255, 255, 255, 0.05),
-    0 0 20px rgba(var(--theme-primary-rgb), 0.4);
+    0 0 15px rgba(var(--theme-primary-rgb), 0.35);
 }
 
 /* 字数统计 */
@@ -161,7 +209,49 @@
 }
 
 /* 响应式设计 */
+@media (max-width: 1200px) {
+  .toolbar-btn {
+    width: 30px;
+    height: 30px;
+  }
+
+  .toolbar-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .toolbar-divider {
+    margin: 0 4px;
+    height: 18px;
+  }
+
+  .toolbar-group {
+    gap: 1px;
+  }
+}
+
 @media (max-width: 768px) {
+  .editor-toolbar {
+    padding: 6px 8px;
+    min-height: 44px;
+  }
+
+  .toolbar-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+  }
+
+  .toolbar-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .toolbar-divider {
+    margin: 0 3px;
+    height: 16px;
+  }
+
   .markdown-editor :deep(.cm-content) {
     padding: 16px;
   }
