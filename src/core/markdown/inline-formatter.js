@@ -14,6 +14,7 @@
 
 import { REGEX_PATTERNS } from '../../config/constants/index.js';
 import { escapeHtml as sharedEscapeHtml, cleanUrl as sharedCleanUrl } from '../../shared/utils/text.js';
+import { extractMath, restoreMath, renderMathPlaceholders } from './math/index.js';
 
 // ============================================================================
 // 转义处理
@@ -362,6 +363,15 @@ const INLINE_FORMAT_PROCESSORS = [
     condition: () => true
   },
   {
+    name: 'math',
+    process: (text, theme, handleEscapes, baseFontSize, state) => {
+      const { text: extractedText, placeholders } = extractMath(text);
+      state.mathPlaceholders = placeholders;
+      return extractedText;
+    },
+    condition: () => true
+  },
+  {
     name: 'images',
     process: (text, theme, handleEscapes, baseFontSize, state) => processImages(text, theme),
     condition: () => true
@@ -402,6 +412,15 @@ const INLINE_FORMAT_PROCESSORS = [
     condition: () => true
   },
   {
+    name: 'restoreMath',
+    process: (text, theme, handleEscapes, baseFontSize, state) => {
+      if (!state.mathPlaceholders?.length) return text;
+      const rendered = renderMathPlaceholders(state.mathPlaceholders);
+      return restoreMath(text, rendered);
+    },
+    condition: () => true
+  },
+  {
     name: 'restoreCode',
     process: (text, theme, handleEscapes, baseFontSize, state) => restoreCodePlaceholders(text, state.codeContext),
     condition: () => true
@@ -417,7 +436,8 @@ function executeFormattingPipeline(text, theme, handleEscapes, baseFontSize = 16
   let result = text;
 
   const state = {
-    codeContext: null
+    codeContext: null,
+    mathPlaceholders: []
   };
 
   for (const processor of INLINE_FORMAT_PROCESSORS) {
