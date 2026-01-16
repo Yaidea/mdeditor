@@ -269,7 +269,7 @@
                       <code>$E = mc^2$</code>
                     </div>
                     <div class="syntax-right">
-                      <p class="demo-math-inline">E = mc²</p>
+                      <span class="demo-math-inline" v-html="renderInlineMath('E = mc^2')"></span>
                     </div>
                   </div>
 
@@ -280,9 +280,7 @@
                       <code>$$<br>x = \frac{-b \pm \sqrt{b^2-4ac}}{2a}<br>$$</code>
                     </div>
                     <div class="syntax-right">
-                      <div class="demo-math-block">
-                        <span class="math-formula">x = (-b ± √(b²-4ac)) / 2a</span>
-                      </div>
+                      <div class="demo-math-block" v-html="renderBlockMath('x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}')"></div>
                     </div>
                   </div>
 
@@ -382,6 +380,8 @@
 </template>
 
 <script>
+import katex from 'katex'
+
 export default {
   name: 'MarkdownGuide',
   props: {
@@ -394,6 +394,28 @@ export default {
   methods: {
     close() {
       this.$emit('close')
+    },
+    renderInlineMath(latex) {
+      try {
+        return katex.renderToString(latex, {
+          displayMode: false,
+          throwOnError: false,
+          output: 'html'
+        })
+      } catch (e) {
+        return latex
+      }
+    },
+    renderBlockMath(latex) {
+      try {
+        return katex.renderToString(latex, {
+          displayMode: true,
+          throwOnError: false,
+          output: 'html'
+        })
+      } catch (e) {
+        return latex
+      }
     }
   }
 }
