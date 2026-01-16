@@ -35,6 +35,7 @@
     "@milkdown/plugin-clipboard": "^7.15.3",
     "@milkdown/plugin-history": "^7.15.3",
     "@milkdown/plugin-listener": "^7.15.3",
+    "@milkdown/plugin-math": "^7.5.9",
     "@milkdown/plugin-prism": "^7.15.3",
     "@milkdown/preset-commonmark": "^7.15.3",
     "@milkdown/preset-gfm": "^7.15.3",

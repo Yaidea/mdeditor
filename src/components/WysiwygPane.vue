@@ -30,6 +30,7 @@ import { history } from '@milkdown/plugin-history'
 import { listener, listenerCtx } from '@milkdown/plugin-listener'
 import { replaceAll, getMarkdown } from '@milkdown/utils'
 import { prism } from '@milkdown/plugin-prism'
+import { math, katexOptionsCtx } from '@milkdown/plugin-math'
 import '../plugins/prism-setup.js'
 
 export default {
@@ -98,6 +99,15 @@ export default {
         .use(history)
         .use(clipboard)
         .use(listener)
+        // Math plugin for LaTeX formulas
+        .use(math)
+        .config((ctx) => {
+          ctx.set(katexOptionsCtx.key, {
+            throwOnError: false,
+            displayMode: false,
+            output: 'html'
+          })
+        })
         // Mermaid NodeView plugin
         .use((await import('../plugins/mermaid-nodeview.js')).mermaidNodeViewPlugin)
         .config((ctx) => {
@@ -697,6 +707,39 @@ export default {
 .wysiwyg-rendered :deep(h6) {
   font-size: calc(var(--markdown-font-size, 16px) * 0.9) !important;
   font-weight: 600 !important;
+}
+
+/* Math formula styles for Milkdown */
+.wysiwyg-rendered :deep([data-type="math_inline"]) {
+  display: inline-block;
+  vertical-align: middle;
+  margin: 0 0.1em;
+  color: var(--theme-text-primary, inherit);
+}
+
+.wysiwyg-rendered :deep([data-type="math_block"]) {
+  display: block;
+  margin: 1em 0;
+  text-align: center;
+  overflow-x: auto;
+  padding: 0.5em 0;
+  color: var(--theme-text-primary, inherit);
+}
+
+.wysiwyg-rendered :deep([data-type="math_inline"]:hover),
+.wysiwyg-rendered :deep([data-type="math_block"]:hover) {
+  background-color: var(--theme-hover-bg, rgba(0, 0, 0, 0.03));
+  border-radius: var(--radius-sm, 4px);
+}
+
+/* KaTeX error styling */
+.wysiwyg-rendered :deep(.katex-error) {
+  color: var(--theme-error, #dc3545);
+  background: var(--theme-error-bg, rgba(220, 53, 69, 0.1));
+  padding: 2px 6px;
+  border-radius: var(--radius-sm, 4px);
+  font-family: Consolas, Monaco, 'Courier New', monospace;
+  font-size: 0.9em;
 }
 </style>
 
