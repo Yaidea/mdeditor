@@ -1,74 +1,75 @@
 /**
  * @file src/core/markdown/math/image-converter.js
- * @description 数学公式转图片（用于微信复制）
+ * @description 数学公式微信公众号兼容处理（参考 mdnice 实现）
+ *
+ * 不再将公式转为图片，而是清理 SVG 属性以兼容微信。
  */
-
-import html2canvas from 'html2canvas'
-import { DOMUtils } from '../../../shared/utils/dom.js'
 
 /**
- * 将数学公式元素转换为 PNG 图片
- * @param {HTMLElement} element - 数学公式元素
- * @param {number} scale - 缩放倍数，默认 2
- * @returns {Promise<string>} Base64 图片 URL
+ * 处理容器内的数学公式 SVG，使其兼容微信公众号
+ * 参考 mdnice 的 solveWeChatMath 实现
+ *
+ * @param {HTMLElement} container - 包含公式的容器
  */
-export async function mathElementToImage(element, scale = 2) {
-  // 克隆元素到离屏容器
-  const container = document.createElement('div')
-  container.style.cssText = 'position:fixed;left:-9999px;top:0;background:transparent;padding:4px;'
+export function solveMathForWeChat(container) {
+  if (!container) return
 
-  const clone = element.cloneNode(true)
-  clone.style.display = 'inline-block'
-  container.appendChild(clone)
-  document.body.appendChild(container)
+  // 1. 移除所有 mjx-container 元素，只保留内部 SVG
+  // 微信不支持自定义元素，必须移除
+  const mjxContainers = container.querySelectorAll('mjx-container')
+  for (const mjx of mjxContainers) {
+    const svg = mjx.querySelector('svg')
+    if (svg) {
+      // 用 SVG 替换整个 mjx-container
+      mjx.replaceWith(svg)
+    } else {
+      mjx.remove()
+    }
+  }
 
-  try {
-    const canvas = await html2canvas(container, {
-      backgroundColor: null,
-      scale,
-      logging: false,
-      useCORS: true
-    })
+  // 2. 处理所有公式 SVG
+  const mathElements = container.querySelectorAll('.math-inline, .math-block, .block-equation')
+  for (const wrapper of mathElements) {
+    const svg = wrapper.querySelector('svg')
+    if (svg) {
+      processSvgElement(svg)
+    }
+  }
 
-    return canvas.toDataURL('image/png')
-  } finally {
-    DOMUtils.safeRemove(container)
+  // 3. 处理可能遗漏的独立 SVG（在公式容器外的）
+  const allSvgs = container.querySelectorAll('svg')
+  for (const svg of allSvgs) {
+    // 检查是否是公式 SVG（通过 data-mml-node 属性判断）
+    if (svg.querySelector('[data-mml-node]')) {
+      processSvgElement(svg)
+    }
   }
 }
 
 /**
- * 批量将容器内的数学公式转为图片
- * @param {HTMLElement} container - 包含公式的容器
- * @param {number} scale - 缩放倍数
+ * 处理单个 SVG 元素使其兼容微信
+ * @param {SVGElement} svg
  */
-export async function rasterizeMathFormulas(container, scale = 2) {
-  const mathElements = Array.from(container.querySelectorAll('.math-inline, .math-block'))
+function processSvgElement(svg) {
+  // 1. 将 width/height 属性转为 style（参考 mdnice 的 solveWeChatMath）
+  const width = svg.getAttribute('width')
+  const height = svg.getAttribute('height')
 
-  for (const el of mathElements) {
-    try {
-      const dataUrl = await mathElementToImage(el, scale)
-      const isBlock = el.classList.contains('math-block')
-
-      const img = document.createElement('img')
-      img.src = dataUrl
-      img.alt = el.getAttribute('data-latex') || 'formula'
-      img.style.verticalAlign = 'middle'
-      img.style.maxWidth = '100%'
-      img.style.height = 'auto'
-
-      if (isBlock) {
-        // 块级公式用居中的 p 包裹
-        const wrapper = document.createElement('p')
-        wrapper.style.textAlign = 'center'
-        wrapper.style.margin = '0.6em 0'
-        wrapper.appendChild(img)
-        el.replaceWith(wrapper)
-      } else {
-        el.replaceWith(img)
-      }
-    } catch (e) {
-      console.warn('数学公式转图片失败：', e)
-      // 失败时保留原始 HTML
-    }
+  if (width) {
+    svg.removeAttribute('width')
+    svg.style.width = width
   }
+  if (height) {
+    svg.removeAttribute('height')
+    svg.style.height = height
+  }
+
+  // 2. 确保有必要的样式
+  if (!svg.style.verticalAlign) {
+    svg.style.verticalAlign = 'middle'
+  }
+  if (!svg.style.maxWidth) {
+    svg.style.maxWidth = '300%'
+  }
+
 }

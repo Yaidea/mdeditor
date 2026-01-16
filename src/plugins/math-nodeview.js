@@ -1,11 +1,12 @@
 // Math NodeView for Milkdown WYSIWYG
 // - Intercepts math_inline and math_block nodes
 // - Click on rendered formula to edit LaTeX source
-// - Uses input/textarea for editing since math nodes are atomic (atom: true)
+// - Uses MathJax SVG for rendering (compatible with WeChat)
+// - 不使用 mjx-container，直接输出 SVG（参考 mdnice）
 
 import { Plugin } from '@milkdown/prose/state'
 import { $prose } from '@milkdown/utils'
-import katex from 'katex'
+import { renderMath } from '../core/markdown/math/renderer.js'
 
 /**
  * Math NodeView class for editable math formulas
@@ -24,7 +25,7 @@ class MathNodeView {
     this.dom.className = isBlock ? 'md-math md-math--block' : 'md-math md-math--inline'
     this.dom.setAttribute('data-type', isBlock ? 'math_block' : 'math_inline')
 
-    // Preview container (rendered KaTeX)
+    // Preview container (rendered MathJax SVG)
     this.previewContainer = document.createElement(isBlock ? 'div' : 'span')
     this.previewContainer.className = 'md-math__preview'
 
@@ -241,11 +242,8 @@ class MathNodeView {
     }
 
     try {
-      const html = katex.renderToString(latex, {
-        displayMode: this.isBlock,
-        throwOnError: false,
-        output: 'html'
-      })
+      // 使用 MathJax SVG 渲染
+      const html = renderMath(latex, this.isBlock)
       this.previewContainer.innerHTML = html
     } catch (err) {
       this.previewContainer.innerHTML = `<span class="md-math__error">${this._escapeHtml(String(err))}</span>`

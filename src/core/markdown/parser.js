@@ -885,7 +885,8 @@ function setOrReplaceDecl(style, prop, value) {
 }
 
 function rewriteTagStyle(html, tag, mutator) {
-  const re = new RegExp(`<${tag}([^>]*?)style="([^"]*)"([^>]*)>`, 'gi');
+  // 使用 \\b 确保只匹配独立的标签名，避免 <p> 匹配到 <path> 等
+  const re = new RegExp(`<${tag}\\b([^>]*?)style="([^"]*)"([^>]*)>`, 'gi');
   return (html || '').replace(re, (_match, pre, style, post) => {
     const newStyle = mutator(style || '');
     return `<${tag}${pre}style="${newStyle}"${post}>`;
@@ -984,7 +985,8 @@ function applyFontStyles(html, options = {}) {
 
   let result = html;
 
-  result = result.replace(/<p(?![^>]*style=)/gi, `<p style="letter-spacing: ${letterSpacing}px; font-size: ${fontSize}px; line-height: ${lineHeightCss} !important; margin: 1.5em 8px; font-weight: 400;"`);
+  // 注意：使用 \b 确保只匹配独立的 <p> 标签，避免匹配到 <path> 等标签
+  result = result.replace(/<p\b(?![^>]*style=)/gi, `<p style="letter-spacing: ${letterSpacing}px; font-size: ${fontSize}px; line-height: ${lineHeightCss} !important; margin: 1.5em 8px; font-weight: 400;"`);
   result = rewriteTagStyle(result, 'p', (style) => applyCommon(style, `font-size: ${fontSize}px; line-height: ${lineHeightCss} !important;`, 'font-weight: 400;'));
 
   result = result.replace(/<li(?![^>]*style=)/gi, `<li style="letter-spacing: ${letterSpacing}px; font-size: ${fontSize}px; line-height: ${lineHeightCss} !important; font-weight: 400; margin: 0.5em 0;"`);

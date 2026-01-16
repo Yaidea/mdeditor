@@ -206,48 +206,55 @@ export async function copyToSocialClean(html, fontSettings = null) {
     });
 
     const copyPromise = async () => {
-      // 使用统一的文本工具来剥离 HTML 标签
       const plainText = TextUtils.stripHtmlTags(html);
+      const containsSvg = /<svg\b/i.test(html);
 
-      // 优先尝试纯API方式，完全避免DOM操作
+      // 优先尝试 Clipboard API（支持 SVG 内容）
       if (navigator.clipboard && navigator.clipboard.write) {
         try {
           await copyWithClipboardAPI(html, plainText);
           return true;
         } catch (apiError) {
-          // 如果纯API失败，继续尝试DOM方式
+          // Clipboard API 失败，继续尝试其他方式
         }
       }
 
-      // 如果纯API失败，优先采用"copy事件监听"方式，不产生选区/不插入DOM，避免页面抖动
-      try {
-        await copyWithExecCommandViaListener(html, plainText);
-        return true;
-      } catch (_) {
-        // 仍失败时，最后使用选区兜底（此路径才创建/插入容器）
-        const container = createRichTextContainer(html, fontSettings);
-        // 使用统一的离屏样式（clipboard 专用版本）
-        DOMUtils.applyOffscreenStyles(container, 'clipboard');
-        document.body.appendChild(container);
+      // 尝试 copy 事件监听方式（不适用于 SVG）
+      if (!containsSvg) {
         try {
-          // 使用 DOMUtils 保存和恢复状态
-          const scrollPos = DOMUtils.saveScrollPosition();
-          const prevActive = DOMUtils.saveActiveElement();
-
-          // 使用 DOMUtils 创建选区
-          DOMUtils.createSelection(container);
-
-          try {
-            copyWithExecCommand();
-          } finally {
-            DOMUtils.clearSelection();
-            DOMUtils.restoreScrollPosition(scrollPos);
-            DOMUtils.restoreActiveElement(prevActive);
-          }
+          await copyWithExecCommandViaListener(html, plainText);
           return true;
-        } finally {
-          DOMUtils.safeRemove(container);
+        } catch (_) {
+          // 继续兜底到选区复制
         }
+      }
+
+      // 选区复制兜底
+      const container = createRichTextContainer(html, fontSettings);
+      // SVG 需要可渲染的容器；非 SVG 使用更严格的隐藏样式
+      DOMUtils.applyOffscreenStyles(container, containsSvg ? 'render' : 'clipboard');
+      if (containsSvg) {
+        container.style.visibility = 'visible';
+      }
+      document.body.appendChild(container);
+      try {
+        // 使用 DOMUtils 保存和恢复状态
+        const scrollPos = DOMUtils.saveScrollPosition();
+        const prevActive = DOMUtils.saveActiveElement();
+
+        // 使用 DOMUtils 创建选区
+        DOMUtils.createSelection(container);
+
+        try {
+          copyWithExecCommand();
+        } finally {
+          DOMUtils.clearSelection();
+          DOMUtils.restoreScrollPosition(scrollPos);
+          DOMUtils.restoreActiveElement(prevActive);
+        }
+        return true;
+      } finally {
+        DOMUtils.safeRemove(container);
       }
     };
 

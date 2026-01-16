@@ -24,7 +24,7 @@ describe('Math integration with inline formatter', () => {
   it('renders inline math formula', () => {
     const result = formatInline('formula $E=mc^2$ end', mockTheme)
     expect(result).toContain('math-inline')
-    expect(result).toContain('katex')
+    expect(result).toContain('<svg') // MathJax SVG（无 mjx-container 包装）
   })
 
   it('renders block math formula', () => {
@@ -54,7 +54,7 @@ describe('Math integration with inline formatter', () => {
   it('handles complex LaTeX formulas', () => {
     const result = formatInline('$$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$', mockTheme)
     expect(result).toContain('math-block')
-    expect(result).toContain('katex')
+    expect(result).toContain('<svg') // MathJax SVG（无 mjx-container 包装）
   })
 
   it('preserves text without math', () => {

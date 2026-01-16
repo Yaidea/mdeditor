@@ -47,12 +47,7 @@
     />
 
     <!-- 通知组件 -->
-    <div v-if="notifications.length > 0 || isCopying" class="notification-container">
-      <!-- 复制中 loading 通知 -->
-      <div v-if="isCopying" class="notification loading">
-        <span class="loading-spinner"></span>
-        <span>正在处理内容...</span>
-      </div>
+    <div v-if="notifications.length > 0" class="notification-container">
       <div
         v-for="notification in notifications"
         :key="notification.id"
@@ -80,10 +75,8 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useAppState, useElectron } from './composables/index.js'
-import { useGlobalThemeManager } from './composables/index.js'
-import { nextTick } from 'vue'
+import { ref, nextTick } from 'vue'
+import { useAppState, useElectron, useGlobalThemeManager } from './composables/index.js'
 import AppHeader from './components/layout/AppHeader.vue'
 import AppMain from './components/layout/AppMain.vue'
 import AppFooter from './components/layout/AppFooter.vue'
@@ -102,7 +95,6 @@ const {
   notifications,
   selectedCopyFormat,
   copyFormatOptions,
-  isCopying,
 
   // 计算属性
   hasContent,
@@ -138,79 +130,36 @@ const {
 
 // 设置菜单监听器
 nextTick(() => {
-  console.log('⏰ 在下一个tick中设置菜单监听器...');
   setupMenuListeners({
-    onOpenFile: (event, { filePath, content }) => {
-      console.log('📁 渲染进程收到打开文件事件');
-      console.log('📂 文件路径:', filePath);
-      
-      // 更新编辑器内容
-      updateMarkdownContent(content);
-      console.log('✅ 编辑器内容已更新');
-      
-      // 设置当前文件路径（通过 openFile 函数）
-      openFile(filePath, content);
-      console.log('📁 当前文件路径已设置');
-      
-      const fileName = filePath.split('/').pop() || filePath.split('\\').pop();
-      console.log('🔔 显示成功通知:', fileName);
-      showNotification(`已打开文件: ${fileName}`, 'success');
-      
-      console.log('🎉 文件打开流程完成');
+    onOpenFile: (_event, { filePath, content }) => {
+      updateMarkdownContent(content)
+      openFile(filePath, content)
+      const fileName = filePath.split('/').pop() || filePath.split('\\').pop()
+      showNotification(`已打开文件: ${fileName}`, 'success')
     },
     onSaveFile: async () => {
-      console.log('💾 渲染进程收到保存文件事件');
       try {
-        const result = await saveFile(markdownContent.value);
+        const result = await saveFile(markdownContent.value)
         if (result.success) {
-          console.log('✅ 文件保存成功:', result.filePath);
-          const fileName = result.filePath.split('/').pop() || result.filePath.split('\\').pop();
-          showNotification(`文件已保存: ${fileName}`, 'success');
+          const fileName = result.filePath.split('/').pop() || result.filePath.split('\\').pop()
+          showNotification(`文件已保存: ${fileName}`, 'success')
         } else {
-          console.log('❌ 文件保存失败:', result.message);
-          showNotification(`保存失败: ${result.message}`, 'error');
+          showNotification(`保存失败: ${result.message}`, 'error')
         }
       } catch (error) {
-        console.error('💥 保存文件时发生错误:', error);
-        showNotification(`保存失败: ${error.message}`, 'error');
+        showNotification(`保存失败: ${error.message}`, 'error')
       }
     }
   })
-  
+
   // 设置文件内容更新监听器
-  setupFileUpdateListener((event, { filePath, content }) => {
-    console.log('📨 收到文件内容更新事件');
-    console.log('📂 文件路径:', filePath);
-    console.log('📄 新内容长度:', content.length);
-    
-    // 检查是否是当前打开的文件
-    if (currentFilePath.value === filePath) {
-      console.log('🔄 更新当前文件内容...');
-      
-      // 检查内容是否真的发生了变化
-      if (markdownContent.value !== content) {
-        // 更新编辑器内容
-        updateMarkdownContent(content);
-        console.log('✅ 编辑器内容已自动更新');
-        
-        // 显示更新通知
-        const fileName = filePath.split('/').pop() || filePath.split('\\').pop();
-        showNotification(`文件已更新: ${fileName}`);
-        
-        // 可选：记录更新日志
-        console.log('📝 文件内容更新记录:', {
-          filePath,
-          oldLength: markdownContent.value.length,
-          newLength: content.length,
-          timestamp: new Date().toISOString()
-        });
-      } else {
-        console.log('ℹ️ 内容相同，无需更新');
-      }
-    } else {
-      console.log('ℹ️ 不是当前打开的文件，忽略更新:', filePath);
+  setupFileUpdateListener((_event, { filePath, content }) => {
+    if (currentFilePath.value === filePath && markdownContent.value !== content) {
+      updateMarkdownContent(content)
+      const fileName = filePath.split('/').pop() || filePath.split('\\').pop()
+      showNotification(`文件已更新: ${fileName}`)
     }
-  });
+  })
 })
 
 // 初始化主题管理器（全局单例内部已自动调用 initialize）
@@ -237,14 +186,6 @@ const handleFileChosen = async (e) => {
     showNotification(`导入失败: ${err.message}`, 'error')
   }
 }
-
-// 基于第一行 H1 自动生成文件名（导出功能移除后不再使用，可保留以备后续扩展）
-// const makeExportFilename = () => {
-//   const md = markdownContent.value || ''
-//   const h1Match = md.match(/^#\s+(.+?)\s*$/m)
-//   const raw = (h1Match && h1Match[1]) || 'markdown-preview'
-//   return raw.replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, ' ').trim().slice(0, 80) || 'markdown-preview'
-// }
 
 </script>
 

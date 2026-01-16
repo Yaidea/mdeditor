@@ -11,7 +11,7 @@ import { parseMarkdown } from '../markdown/index.js';
 import { copyToSocialClean } from './clipboard.js';
 import mermaid from 'mermaid';
 import { DOMUtils, OFFSCREEN_STYLES } from '../../shared/utils/dom.js';
-import { rasterizeMathFormulas } from '../markdown/math/image-converter.js';
+import { solveMathForWeChat } from '../markdown/math/image-converter.js';
 
 /**
  * 运行 mermaid，将容器内的 mermaid 元素转换为 SVG
@@ -145,10 +145,15 @@ function sanitizeSvgForRasterize(svg) {
 
 
 /**
- * 将容器内所有 SVG 转为 PNG 图片，以适配会过滤 SVG 的编辑器（如微信）
+ * 将容器内非数学公式的 SVG 转为 PNG 图片，以适配会过滤 SVG 的编辑器（如微信）
  */
 async function rasterizeMermaidSvgs(container, scale = 2) {
-  const svgs = Array.from(container.querySelectorAll('svg'));
+  const svgs = Array.from(container.querySelectorAll('svg')).filter(svg => {
+    if (svg.closest('.math-inline, .math-block, .block-equation, [data-formula]')) {
+      return false;
+    }
+    return !svg.querySelector('[data-mml-node]');
+  });
   for (const svg of svgs) {
     try {
       // 先基于实际内容计算紧致边界，消除右下偏移与过大留白
@@ -377,22 +382,21 @@ export async function copySocialFormat(markdownText, options = {}) {
     // 1) 先生成社交版 HTML（含 mermaid 容器）
     const socialHtml = generateSocialHtml(markdownText, options);
 
-    // 2) 创建离屏容器，渲染 mermaid 为 SVG（使用统一的离屏样式）
+    // 2) 创建离屏容器，渲染 mermaid 为 SVG
     const container = DOMUtils.createOffscreenContainer(socialHtml, 'render');
     document.body.appendChild(container);
 
     await renderMermaidInContainer(container);
 
-    // 直接将所有 Mermaid SVG 栅格化为 PNG，避开平台过滤与偏移问题
+    // 将 Mermaid SVG 栅格化为 PNG，避开平台过滤问题
     await rasterizeMermaidSvgs(container, 2);
 
-    // 将数学公式转为 PNG，适配微信编辑器
-    await rasterizeMathFormulas(container, 2);
+    // 处理数学公式 SVG，使其兼容微信公众号
+    solveMathForWeChat(container);
 
-    // 5) 获取最终 HTML 并复制
+    // 3) 获取最终 HTML 并复制
     const finalHtml = container.innerHTML;
 
-    // 清理容器（使用统一的 DOM 工具）
     DOMUtils.safeRemove(container);
 
     const success = await copyToSocialClean(finalHtml, options.fontSettings);
