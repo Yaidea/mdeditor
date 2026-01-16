@@ -849,10 +849,30 @@ export const tableBlockPlugin = $prose((ctx) => {
         hideAllHandles()
       }
       // Listen to scroll on the editor container and window
-      const scrollContainer = editorView.dom.closest('.wysiwyg-rendered') || editorView.dom.parentElement
-      if (scrollContainer) {
-        scrollContainer.addEventListener('scroll', handleScroll)
+      // Find all scrollable ancestors to ensure we catch scroll events
+      const scrollContainers = []
+      let el = editorView.dom
+      while (el && el !== document.body) {
+        const style = window.getComputedStyle(el)
+        const overflow = style.overflow + style.overflowY + style.overflowX
+        if (overflow.includes('scroll') || overflow.includes('auto')) {
+          scrollContainers.push(el)
+        }
+        el = el.parentElement
       }
+      // Also check the immediate parent and ancestors with specific classes
+      const wysiwygRendered = editorView.dom.closest('.wysiwyg-rendered')
+      if (wysiwygRendered && !scrollContainers.includes(wysiwygRendered)) {
+        scrollContainers.push(wysiwygRendered)
+      }
+      const previewContainer = editorView.dom.closest('.preview-container')
+      if (previewContainer && !scrollContainers.includes(previewContainer)) {
+        scrollContainers.push(previewContainer)
+      }
+      // Bind scroll listeners to all found containers
+      scrollContainers.forEach((container) => {
+        container.addEventListener('scroll', handleScroll)
+      })
       window.addEventListener('scroll', handleScroll, true)
 
       return {
@@ -865,10 +885,16 @@ export const tableBlockPlugin = $prose((ctx) => {
           window.removeEventListener('dragover', handleDragOver)
           window.removeEventListener('dragend', handleDragEnd)
           window.removeEventListener('drop', handleDrop)
+          window.removeEventListener('scroll', handleScroll, true)
 
           editorView.dom.removeEventListener('pointermove', handlePointerMove)
           editorView.dom.removeEventListener('pointerleave', handlePointerLeave)
           editorView.dom.removeEventListener('click', handleEditorClick)
+
+          // Clean up scroll listeners on all containers
+          scrollContainers.forEach((container) => {
+            container.removeEventListener('scroll', handleScroll)
+          })
 
           if (dom.wrapper.parentElement) {
             dom.wrapper.parentElement.removeChild(dom.wrapper)
