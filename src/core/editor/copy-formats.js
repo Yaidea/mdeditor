@@ -26,7 +26,8 @@ async function renderMermaidInContainer(container) {
       deterministicIDSeed: 'copy-mermaid',
       flowchart: {
         htmlLabels: false,
-        useMaxWidth: true
+        useMaxWidth: true,
+        diagramPadding: 20  // 增加图表边距，防止右侧文字被截断
       },
       // gantt/pie 各子图的主题变量统一字体，避免外链字体
       themeVariables: {
@@ -58,8 +59,24 @@ async function renderMermaidInContainer(container) {
         const id = `mmd-${i}-${Math.random().toString(36).slice(2)}`;
         try {
           const { svg } = await mermaid.render(id, def, undefined, sandbox);
+          // 扩展 viewBox 右侧边距，防止中文字符被截断
+          const tempDiv = document.createElement('div');
+          tempDiv.innerHTML = svg;
+          const svgEl = tempDiv.querySelector('svg');
+          if (svgEl) {
+            const viewBox = svgEl.getAttribute('viewBox');
+            if (viewBox) {
+              const parts = viewBox.split(/\s+/).map(Number);
+              if (parts.length === 4) {
+                parts[2] = parts[2] * 1.03;
+                svgEl.setAttribute('viewBox', parts.join(' '));
+              }
+            }
+            // 关键修复：设置 overflow: visible 防止文字被裁剪
+            svgEl.style.overflow = 'visible';
+          }
           // 直接替换为 SVG，避免 run() 对全局的副作用
-          el.outerHTML = svg;
+          el.outerHTML = tempDiv.innerHTML;
         } catch (err) {
           console.warn('单个 Mermaid 渲染失败（复制流程继续）：', err);
         }
@@ -137,7 +154,8 @@ async function rasterizeMermaidSvgs(container, scale = 2) {
       // 先基于实际内容计算紧致边界，消除右下偏移与过大留白
       let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
       let maxStroke = 0;
-      const targets = svg.querySelectorAll('g, path, rect, circle, ellipse, line, polyline, polygon, text');
+      // 扩展选择器：包含 use, tspan, foreignObject 等 KaTeX 数学公式可能使用的元素
+      const targets = svg.querySelectorAll('g, path, rect, circle, ellipse, line, polyline, polygon, text, use, tspan, foreignObject, image');
       targets.forEach(el => {
         try {
           const b = el.getBBox();
@@ -159,7 +177,9 @@ async function rasterizeMermaidSvgs(container, scale = 2) {
       try {
         const rootBBox = svg.getBBox();
         if (rootBBox && isFinite(rootBBox.width) && isFinite(rootBBox.height)) {
-          const padInSvgUnit = Math.max(2, Math.ceil(maxStroke / 2) + 1);
+          // 增加额外边距以防止数学公式被裁切（公式渲染可能超出计算边界）
+          const extraPadding = 8; // 为数学公式预留额外空间
+          const padInSvgUnit = Math.max(2, Math.ceil(maxStroke / 2) + 1) + extraPadding;
           x0 = Math.floor(rootBBox.x - padInSvgUnit);
           y0 = Math.floor(rootBBox.y - padInSvgUnit);
           w = Math.ceil(rootBBox.width + padInSvgUnit * 2);

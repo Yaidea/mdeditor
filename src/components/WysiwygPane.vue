@@ -297,7 +297,8 @@ export default {
   cursor: pointer;
 }
 .wysiwyg-rendered :deep(.md-mermaid__btn:hover) { background: #f3f4f6; }
-.wysiwyg-rendered :deep(.md-mermaid__svg) { padding: 12px; overflow: auto; }
+.wysiwyg-rendered :deep(.md-mermaid__svg) { padding: 12px; }
+.wysiwyg-rendered :deep(.md-mermaid__svg svg) { display: block; max-width: 100%; height: auto; }
 .wysiwyg-rendered :deep(.md-mermaid__source) { margin: 0; padding: 8px 12px; overflow: auto; }
 .wysiwyg-rendered :deep(.md-mermaid__error) { color: #b91c1c; white-space: pre-wrap; }
 .wysiwyg-rendered :deep(.md-mermaid__empty) { color: #6b7280; padding: 12px; }

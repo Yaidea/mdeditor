@@ -254,7 +254,8 @@ export default {
             deterministicIDSeed: 'preview-mermaid',
             flowchart: {
               htmlLabels: false, // 重要：避免使用 foreignObject，以适配公众号
-              useMaxWidth: true
+              useMaxWidth: true,
+              diagramPadding: 20  // 增加图表边距，防止右侧文字被截断
             },
             themeVariables: {
               fontFamily: '"Microsoft YaHei", "微软雅黑", Arial, sans-serif'
@@ -307,6 +308,24 @@ export default {
                   const hasError = wrap.querySelector('.error-icon') || /Syntax error/i.test(wrap.textContent || '')
                   const svgEl = wrap.querySelector('svg')
                   if (!hasError && svgEl) {
+                    // 扩展 viewBox 边距，防止中文字符和数学公式被截断
+                    const viewBox = svgEl.getAttribute('viewBox')
+                    if (viewBox) {
+                      const parts = viewBox.split(/\s+/).map(Number)
+                      if (parts.length === 4) {
+                        // viewBox: minX minY width height
+                        // 增加宽度和高度的 5%，并向左上偏移以保持居中
+                        const widthExpand = parts[2] * 0.05
+                        const heightExpand = parts[3] * 0.05
+                        parts[0] = parts[0] - widthExpand / 2  // minX 左移
+                        parts[1] = parts[1] - heightExpand / 2 // minY 上移
+                        parts[2] = parts[2] + widthExpand      // width 增加
+                        parts[3] = parts[3] + heightExpand     // height 增加
+                        svgEl.setAttribute('viewBox', parts.join(' '))
+                      }
+                    }
+                    // 关键修复：设置 overflow: visible 防止文字被裁剪
+                    svgEl.style.overflow = 'visible'
                     // 正常渲染：替换为 SVG
                     el.replaceWith(svgEl)
                   } else {

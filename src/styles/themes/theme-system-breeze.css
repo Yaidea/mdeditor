@@ -208,5 +208,3 @@ body:has(.theme-system-breeze) {
 }
 
 .theme-system-breeze.modern-markdown img { display: block; margin: 1rem auto; border-radius: 12px; border: 1px solid var(--theme-border-light); box-shadow: 0 4px 14px rgba(0,0,0,0.06); max-width: 100%; height: auto; }
-
-

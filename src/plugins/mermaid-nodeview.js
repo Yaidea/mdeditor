@@ -15,6 +15,9 @@ const loadMermaid = async () => {
       startOnLoad: false,
       securityLevel: 'strict',
       theme: 'default',
+      flowchart: {
+        diagramPadding: 20  // 增加图表边距，防止右侧文字被截断
+      }
     })
   }
   return mermaidMod
@@ -172,6 +175,20 @@ class MermaidNodeView {
       try {
         const { svg } = await mermaid.render(id, code)
         this.svgContainer.innerHTML = svg
+        // 扩展 viewBox 右侧边距，防止中文字符被截断
+        const svgEl = this.svgContainer.querySelector('svg')
+        if (svgEl) {
+          const viewBox = svgEl.getAttribute('viewBox')
+          if (viewBox) {
+            const parts = viewBox.split(/\s+/).map(Number)
+            if (parts.length === 4) {
+              parts[2] = parts[2] * 1.03
+              svgEl.setAttribute('viewBox', parts.join(' '))
+            }
+          }
+          // 关键修复：设置 overflow: visible 防止文字被裁剪
+          svgEl.style.overflow = 'visible'
+        }
       } catch (err) {
         // 使用 DOM API 防止注入：不将错误内容作为 HTML 注入
         const pre = document.createElement('pre')
