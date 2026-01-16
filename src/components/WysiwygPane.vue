@@ -32,6 +32,7 @@ import { replaceAll, getMarkdown } from '@milkdown/utils'
 import { prism } from '@milkdown/plugin-prism'
 import { math, katexOptionsCtx } from '@milkdown/plugin-math'
 import '../plugins/prism-setup.js'
+import { mathNodeViewPlugin } from '../plugins/math-nodeview.js'
 
 export default {
   name: 'WysiwygPane',
@@ -110,6 +111,8 @@ export default {
         })
         // Mermaid NodeView plugin
         .use((await import('../plugins/mermaid-nodeview.js')).mermaidNodeViewPlugin)
+        // Math NodeView plugin for editable formulas
+        .use(mathNodeViewPlugin)
         .config((ctx) => {
           const l = ctx.get(listenerCtx)
           l.focus(() => { hasFocus.value = true })
@@ -740,6 +743,194 @@ export default {
   border-radius: var(--radius-sm, 4px);
   font-family: Consolas, Monaco, 'Courier New', monospace;
   font-size: 0.9em;
+}
+
+/* ========== Math NodeView Styles ========== */
+
+/* Base math container */
+.wysiwyg-rendered :deep(.md-math) {
+  position: relative;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+/* Inline math */
+.wysiwyg-rendered :deep(.md-math--inline) {
+  display: inline-block;
+  vertical-align: middle;
+  padding: 2px 4px;
+  border-radius: 4px;
+  margin: 0 2px;
+}
+
+.wysiwyg-rendered :deep(.md-math--inline:hover) {
+  background-color: rgba(var(--theme-primary-rgb), 0.08);
+}
+
+.wysiwyg-rendered :deep(.md-math--inline.is-selected),
+.wysiwyg-rendered :deep(.md-math--inline.is-editing) {
+  background-color: rgba(var(--theme-primary-rgb), 0.12);
+  outline: 2px solid var(--theme-primary);
+  outline-offset: 1px;
+}
+
+/* Block math */
+.wysiwyg-rendered :deep(.md-math--block) {
+  display: block;
+  margin: 1rem 0;
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--theme-border-light, #e5e7eb);
+  background: var(--theme-bg-secondary, #f9fafb);
+}
+
+.wysiwyg-rendered :deep(.md-math--block:hover) {
+  border-color: var(--theme-primary);
+  box-shadow: 0 2px 8px rgba(var(--theme-primary-rgb), 0.1);
+}
+
+.wysiwyg-rendered :deep(.md-math--block.is-selected),
+.wysiwyg-rendered :deep(.md-math--block.is-editing) {
+  border-color: var(--theme-primary);
+  outline: 2px solid var(--theme-primary);
+  outline-offset: -2px;
+}
+
+/* Math toolbar (block only) */
+.wysiwyg-rendered :deep(.md-math__toolbar) {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--theme-border-light, #e5e7eb);
+}
+
+.wysiwyg-rendered :deep(.md-math__btn) {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font: inherit;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--theme-border-medium, #d1d5db);
+  background: var(--theme-bg-primary, #fff);
+  color: var(--theme-text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.wysiwyg-rendered :deep(.md-math__btn:hover) {
+  background: var(--theme-bg-tertiary, #f3f4f6);
+  border-color: var(--theme-primary);
+  color: var(--theme-primary);
+}
+
+.wysiwyg-rendered :deep(.md-math__btn-icon) {
+  font-size: 14px;
+}
+
+/* Preview container */
+.wysiwyg-rendered :deep(.md-math__preview) {
+  text-align: center;
+}
+
+.wysiwyg-rendered :deep(.md-math--inline .md-math__preview) {
+  text-align: left;
+  display: inline;
+}
+
+/* Source editor container - hidden by default */
+.wysiwyg-rendered :deep(.md-math__source) {
+  display: none;
+}
+
+.wysiwyg-rendered :deep(.md-math[data-editing="true"] .md-math__source) {
+  display: block;
+  margin-top: 0.5rem;
+}
+
+.wysiwyg-rendered :deep(.md-math--inline[data-editing="true"] .md-math__source) {
+  display: inline-block;
+  margin-top: 0;
+}
+
+.wysiwyg-rendered :deep(.md-math[data-editing="true"] .md-math__preview) {
+  display: none;
+}
+
+/* Source code editor */
+.wysiwyg-rendered :deep(.md-math__editor) {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  font-family: var(--theme-code-font-family, 'JetBrains Mono', Consolas, monospace);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--theme-text-primary);
+  background: var(--theme-bg-primary, #fff);
+  border: 1px solid var(--theme-border-medium, #d1d5db);
+  border-radius: 6px;
+  outline: none;
+}
+
+.wysiwyg-rendered :deep(.md-math__editor:focus) {
+  border-color: var(--theme-primary);
+  box-shadow: 0 0 0 3px rgba(var(--theme-primary-rgb), 0.15);
+}
+
+.wysiwyg-rendered :deep(.md-math--inline .md-math__editor) {
+  display: inline-block;
+  width: auto;
+  min-width: 100px;
+  padding: 2px 6px;
+}
+
+/* Empty state */
+.wysiwyg-rendered :deep(.md-math__empty) {
+  color: var(--theme-text-tertiary, #9ca3af);
+  font-style: italic;
+  font-size: 14px;
+}
+
+/* Error state */
+.wysiwyg-rendered :deep(.md-math__error) {
+  color: var(--theme-error, #dc3545);
+  background: var(--theme-error-bg, rgba(220, 53, 69, 0.1));
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: var(--theme-code-font-family, monospace);
+  font-size: 12px;
+  display: block;
+  white-space: pre-wrap;
+}
+
+/* Edit hint tooltip */
+.wysiwyg-rendered :deep(.md-math--inline::after) {
+  content: '点击编辑';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 8px;
+  font-size: 11px;
+  color: white;
+  background: rgba(0, 0, 0, 0.75);
+  border-radius: 4px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+  z-index: 10;
+}
+
+.wysiwyg-rendered :deep(.md-math--inline:hover::after) {
+  opacity: 1;
+}
+
+.wysiwyg-rendered :deep(.md-math--inline.is-editing::after) {
+  content: 'ESC 退出';
 }
 </style>
 
