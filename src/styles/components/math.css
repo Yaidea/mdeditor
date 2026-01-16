@@ -1,0 +1,52 @@
+/**
+ * @file src/styles/components/math.css
+ * @description 数学公式样式
+ */
+
+/* 行内数学公式 */
+.math-inline {
+  display: inline-block;
+  vertical-align: middle;
+  margin: 0 0.1em;
+}
+
+/* 块级数学公式 */
+.math-block {
+  display: block;
+  margin: 1em 0;
+  text-align: center;
+  overflow-x: auto;
+  padding: 0.5em 0;
+}
+
+/* 公式错误提示 */
+.math-error {
+  color: var(--theme-error, #dc3545);
+  background: var(--theme-error-bg, rgba(220, 53, 69, 0.1));
+  padding: 2px 6px;
+  border-radius: var(--radius-sm, 4px);
+  font-family: Consolas, Monaco, 'Courier New', monospace;
+  font-size: 0.9em;
+}
+
+/* KaTeX 颜色适配主题 */
+.katex {
+  color: var(--theme-text-primary, inherit);
+}
+
+/* 确保 KaTeX 公式在深色主题下可见 */
+.katex .mord,
+.katex .mop,
+.katex .mrel,
+.katex .mbin,
+.katex .mpunct,
+.katex .minner {
+  color: inherit;
+}
+
+/* 公式选中状态 */
+.math-inline:hover,
+.math-block:hover {
+  background-color: var(--theme-hover-bg, rgba(0, 0, 0, 0.03));
+  border-radius: var(--radius-sm, 4px);
+}
