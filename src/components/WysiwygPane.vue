@@ -860,7 +860,7 @@ export default {
   display: none;
 }
 
-/* Source code editor */
+/* Source code editor - input/textarea */
 .wysiwyg-rendered :deep(.md-math__editor) {
   display: block;
   width: 100%;
@@ -873,6 +873,8 @@ export default {
   border: 1px solid var(--theme-border-medium, #d1d5db);
   border-radius: 6px;
   outline: none;
+  resize: vertical;
+  box-sizing: border-box;
 }
 
 .wysiwyg-rendered :deep(.md-math__editor:focus) {
@@ -883,8 +885,15 @@ export default {
 .wysiwyg-rendered :deep(.md-math--inline .md-math__editor) {
   display: inline-block;
   width: auto;
-  min-width: 100px;
-  padding: 2px 6px;
+  min-width: 120px;
+  max-width: 300px;
+  padding: 4px 8px;
+  resize: none;
+}
+
+/* Textarea specific */
+.wysiwyg-rendered :deep(textarea.md-math__editor) {
+  min-height: 60px;
 }
 
 /* Empty state */

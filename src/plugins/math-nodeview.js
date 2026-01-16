@@ -1,14 +1,15 @@
 // Math NodeView for Milkdown WYSIWYG
 // - Intercepts math_inline and math_block nodes
 // - Click on rendered formula to edit LaTeX source
-// - Supports toggle between preview (KaTeX) and source (editable)
+// - Uses input/textarea for editing since math nodes are atomic (atom: true)
 
-import { Plugin, TextSelection } from '@milkdown/prose/state'
+import { Plugin } from '@milkdown/prose/state'
 import { $prose } from '@milkdown/utils'
 import katex from 'katex'
 
 /**
- * Base class for math node views
+ * Math NodeView class for editable math formulas
+ * Since Milkdown math nodes are atomic, we use custom input elements for editing
  */
 class MathNodeView {
   constructor(node, view, getPos, isBlock = false) {
@@ -17,7 +18,6 @@ class MathNodeView {
     this.getPos = getPos
     this.isBlock = isBlock
     this.editing = false
-    this.lastLatex = ''
 
     // Create DOM structure
     this.dom = document.createElement(isBlock ? 'div' : 'span')
@@ -28,9 +28,21 @@ class MathNodeView {
     this.previewContainer = document.createElement(isBlock ? 'div' : 'span')
     this.previewContainer.className = 'md-math__preview'
 
-    // Source editor container
+    // Source editor container with input element
     this.sourceContainer = document.createElement(isBlock ? 'div' : 'span')
     this.sourceContainer.className = 'md-math__source'
+
+    // Create input element (textarea for block, input for inline)
+    if (isBlock) {
+      this.inputEl = document.createElement('textarea')
+      this.inputEl.rows = 3
+    } else {
+      this.inputEl = document.createElement('input')
+      this.inputEl.type = 'text'
+    }
+    this.inputEl.className = 'md-math__editor'
+    this.inputEl.placeholder = isBlock ? '输入 LaTeX 公式...' : 'LaTeX'
+    this.sourceContainer.appendChild(this.inputEl)
 
     // For block math, add a toolbar
     if (isBlock) {
@@ -50,37 +62,48 @@ class MathNodeView {
       this.dom.appendChild(this.toolbar)
     }
 
-    // contentDOM is where ProseMirror manages text content
-    this.contentDOM = document.createElement(isBlock ? 'code' : 'code')
-    this.contentDOM.className = 'md-math__editor'
-    this.sourceContainer.appendChild(this.contentDOM)
-
     this.dom.appendChild(this.previewContainer)
     this.dom.appendChild(this.sourceContainer)
 
-    // Event handlers
-    this.dom.addEventListener('click', (e) => {
-      if (!this.editing && !this.toolbar?.contains(e.target)) {
-        e.preventDefault()
-        e.stopPropagation()
-        this.setEditing(true)
-      }
+    // Input event handlers
+    this.inputEl.addEventListener('input', () => {
+      this._saveContent()
     })
 
-    this.dom.addEventListener('dblclick', (e) => {
-      if (!this.editing) {
-        e.preventDefault()
-        e.stopPropagation()
-        this.setEditing(true)
-      }
+    this.inputEl.addEventListener('blur', () => {
+      // Small delay to allow button clicks to register
+      setTimeout(() => {
+        if (this.editing && !this.dom.contains(document.activeElement)) {
+          this.setEditing(false)
+        }
+      }, 150)
     })
 
-    this.dom.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && this.editing) {
+    this.inputEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
         e.preventDefault()
         e.stopPropagation()
         this.setEditing(false)
       }
+      // For inline math, Enter saves and exits
+      if (!this.isBlock && e.key === 'Enter') {
+        e.preventDefault()
+        e.stopPropagation()
+        this.setEditing(false)
+      }
+      // For block math, Ctrl/Cmd+Enter saves and exits
+      if (this.isBlock && e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault()
+        e.stopPropagation()
+        this.setEditing(false)
+      }
+    })
+
+    // Click to edit
+    this.previewContainer.addEventListener('click', (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+      this.setEditing(true)
     })
 
     // Block toolbar interactions
@@ -91,24 +114,47 @@ class MathNodeView {
       })
     }
 
-    // Block preview interactions in preview mode
-    this.previewContainer.addEventListener('mousedown', (e) => {
-      if (!this.editing) {
-        e.preventDefault()
-        e.stopPropagation()
-      }
-    })
-
     // Initial render
-    this.setEditing(false)
-    this.renderIfNeeded()
+    this.renderPreview()
   }
 
+  /**
+   * Get LaTeX content from node
+   */
   getLatex() {
     if (this.isBlock) {
-      return this.node.attrs?.value || this.node.textContent || ''
+      // Block math stores value in attrs.value
+      return this.node.attrs?.value || ''
     }
+    // Inline math stores value in text content
     return this.node.textContent || ''
+  }
+
+  /**
+   * Save content from input to ProseMirror document
+   */
+  _saveContent() {
+    const newLatex = this.inputEl.value
+    const pos = typeof this.getPos === 'function' ? this.getPos() : null
+    if (pos == null) return
+
+    const { state, dispatch } = this.view
+    const node = this.node
+    let tr = state.tr
+
+    if (this.isBlock) {
+      // For block math, update the attrs.value
+      tr = tr.setNodeMarkup(pos, null, { ...node.attrs, value: newLatex })
+    } else {
+      // For inline math, replace the node content
+      const nodeType = state.schema.nodes.math_inline
+      if (nodeType) {
+        const newNode = nodeType.create(node.attrs, newLatex ? state.schema.text(newLatex) : null)
+        tr = tr.replaceWith(pos, pos + node.nodeSize, newNode)
+      }
+    }
+
+    dispatch(tr)
   }
 
   selectNode() {
@@ -124,13 +170,19 @@ class MathNodeView {
     if (v) {
       this.dom.setAttribute('data-editing', 'true')
       this.dom.classList.add('is-editing')
+      // Load current content into input
+      this.inputEl.value = this.getLatex()
       if (this.toolbar) {
         const btn = this.toolbar.querySelector('.md-math__btn')
         if (btn) {
           btn.innerHTML = '<span class="md-math__btn-icon">✓</span><span class="md-math__btn-text">完成编辑</span>'
         }
       }
-      this._focusInto()
+      // Focus input
+      setTimeout(() => {
+        this.inputEl.focus()
+        this.inputEl.select()
+      }, 10)
     } else {
       this.dom.removeAttribute('data-editing')
       this.dom.classList.remove('is-editing')
@@ -140,22 +192,8 @@ class MathNodeView {
           btn.innerHTML = '<span class="md-math__btn-icon">✏️</span><span class="md-math__btn-text">编辑公式</span>'
         }
       }
-      this.renderIfNeeded()
+      this.renderPreview()
     }
-  }
-
-  _focusInto() {
-    const { state, dispatch } = this.view
-    const basePos = typeof this.getPos === 'function' ? this.getPos() : null
-    if (basePos != null) {
-      try {
-        const inside = Math.min(state.doc.content.size - 1, basePos + 1)
-        dispatch(state.tr.setSelection(TextSelection.create(state.doc, inside)).scrollIntoView())
-      } catch (e) {
-        // ignore
-      }
-    }
-    this.view.focus()
   }
 
   toggle() {
@@ -167,42 +205,38 @@ class MathNodeView {
     const expectedType = this.isBlock ? 'math_block' : 'math_inline'
     if (node.type.name !== expectedType) return false
     this.node = node
-    if (!this.editing) this.renderIfNeeded()
+    if (!this.editing) {
+      this.renderPreview()
+    }
     return true
   }
 
   ignoreMutation(m) {
-    // Ignore attribute changes on our root element
-    if (m.type === 'attributes' && m.target === this.dom) return true
-    if (m.type === 'selection') return true
-    // Ignore toolbar and preview mutations
-    if (this.toolbar && this.toolbar.contains(m.target)) return true
-    if (this.previewContainer && this.previewContainer.contains(m.target)) return true
-    // Allow ProseMirror to handle contentDOM mutations
-    if (this.contentDOM && this.contentDOM.contains(m.target)) return false
+    // Ignore all mutations - we manage our own DOM
     return true
   }
 
   stopEvent(e) {
-    const t = e.target
+    // In editing mode, let input handle all events
+    if (this.editing) {
+      return this.sourceContainer.contains(e.target)
+    }
     // Block toolbar interactions
-    if (this.toolbar && this.toolbar.contains(t)) return true
-    // In preview mode, block interactions
-    if (!this.editing && this.previewContainer && this.previewContainer.contains(t)) return true
+    if (this.toolbar && this.toolbar.contains(e.target)) return true
+    // Block preview clicks
+    if (this.previewContainer.contains(e.target)) return true
     return false
   }
 
   destroy() {
-    // Cleanup if needed
+    // Cleanup
   }
 
-  renderIfNeeded() {
+  renderPreview() {
     const latex = this.getLatex()
-    if (latex === this.lastLatex && this.previewContainer.innerHTML) return
-    this.lastLatex = latex
 
     if (!latex.trim()) {
-      this.previewContainer.innerHTML = `<span class="md-math__empty">${this.isBlock ? '点击输入块级公式' : '点击输入公式'}</span>`
+      this.previewContainer.innerHTML = `<span class="md-math__empty">${this.isBlock ? '点击输入块级公式' : '$'}</span>`
       return
     }
 
