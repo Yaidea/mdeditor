@@ -75,7 +75,6 @@
 import MarkdownEditor from '../MarkdownEditor.vue'
 import PreviewPane from '../PreviewPane.vue'
 import WysiwygPane from '../WysiwygPane.vue'
-import { } from 'vue'
 
 const props = defineProps({
   markdownContent: {

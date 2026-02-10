@@ -29,6 +29,31 @@ const isMermaidBlock = (node) => {
   return node?.type?.name === 'code_block' && lang === 'mermaid'
 }
 
+const normalizeMermaidSvg = (svgEl) => {
+  if (!svgEl) return
+
+  const viewBox = svgEl.getAttribute('viewBox')
+  if (viewBox) {
+    const parts = viewBox.split(/\s+/).map(Number)
+    if (parts.length === 4) {
+      const widthExpand = Math.max(parts[2] * 0.08, 24)
+      const heightExpand = Math.max(parts[3] * 0.06, 16)
+      parts[0] = parts[0] - widthExpand * 0.4
+      parts[1] = parts[1] - heightExpand / 2
+      parts[2] = parts[2] + widthExpand
+      parts[3] = parts[3] + heightExpand
+      svgEl.setAttribute('viewBox', parts.join(' '))
+    }
+  }
+
+  svgEl.classList.add('mermaid-svg')
+  svgEl.style.overflow = 'visible'
+  svgEl.style.letterSpacing = 'normal'
+  svgEl.querySelectorAll('text, tspan').forEach((n) => {
+    n.style.letterSpacing = '0px'
+  })
+}
+
 class MermaidNodeView {
   constructor(node, view, getPos) {
     this.node = node
@@ -175,26 +200,9 @@ class MermaidNodeView {
       try {
         const { svg } = await mermaid.render(id, code)
         this.svgContainer.innerHTML = svg
-        // 扩展 viewBox 边距，防止中文字符和数学公式被截断
         const svgEl = this.svgContainer.querySelector('svg')
         if (svgEl) {
-          const viewBox = svgEl.getAttribute('viewBox')
-          if (viewBox) {
-            const parts = viewBox.split(/\s+/).map(Number)
-            if (parts.length === 4) {
-              // viewBox: minX minY width height
-              // 增加宽度和高度的 5%，并向左上偏移以保持居中
-              const widthExpand = parts[2] * 0.05
-              const heightExpand = parts[3] * 0.05
-              parts[0] = parts[0] - widthExpand / 2  // minX 左移
-              parts[1] = parts[1] - heightExpand / 2 // minY 上移
-              parts[2] = parts[2] + widthExpand      // width 增加
-              parts[3] = parts[3] + heightExpand     // height 增加
-              svgEl.setAttribute('viewBox', parts.join(' '))
-            }
-          }
-          // 关键修复：设置 overflow: visible 防止文字被裁剪
-          svgEl.style.overflow = 'visible'
+          normalizeMermaidSvg(svgEl)
         }
       } catch (err) {
         // 使用 DOM API 防止注入：不将错误内容作为 HTML 注入
@@ -220,4 +228,3 @@ export const mermaidNodeViewPlugin = $prose(() => {
     },
   })
 })
-

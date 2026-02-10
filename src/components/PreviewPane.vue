@@ -213,6 +213,33 @@ export default {
     }
 
     // 处理Markdown解析和转换
+    const normalizeMermaidSvg = (svgEl) => {
+      if (!svgEl) return
+
+      // Mermaid 在离屏容器中计算尺寸，最终显示容器可能有不同字体/字距。
+      // 统一文字属性并增加额外边距，避免右侧中文被裁切。
+      const viewBox = svgEl.getAttribute('viewBox')
+      if (viewBox) {
+        const parts = viewBox.split(/\s+/).map(Number)
+        if (parts.length === 4) {
+          const widthExpand = Math.max(parts[2] * 0.08, 24)
+          const heightExpand = Math.max(parts[3] * 0.06, 16)
+          parts[0] = parts[0] - widthExpand * 0.4
+          parts[1] = parts[1] - heightExpand / 2
+          parts[2] = parts[2] + widthExpand
+          parts[3] = parts[3] + heightExpand
+          svgEl.setAttribute('viewBox', parts.join(' '))
+        }
+      }
+
+      svgEl.classList.add('mermaid-svg')
+      svgEl.style.overflow = 'visible'
+      svgEl.style.letterSpacing = 'normal'
+      svgEl.querySelectorAll('text, tspan').forEach((n) => {
+        n.style.letterSpacing = '0px'
+      })
+    }
+
     const processMarkdown = async () => {
       if (!props.markdown) {
         renderedHtml.value = ''
@@ -308,24 +335,7 @@ export default {
                   const hasError = wrap.querySelector('.error-icon') || /Syntax error/i.test(wrap.textContent || '')
                   const svgEl = wrap.querySelector('svg')
                   if (!hasError && svgEl) {
-                    // 扩展 viewBox 边距，防止中文字符和数学公式被截断
-                    const viewBox = svgEl.getAttribute('viewBox')
-                    if (viewBox) {
-                      const parts = viewBox.split(/\s+/).map(Number)
-                      if (parts.length === 4) {
-                        // viewBox: minX minY width height
-                        // 增加宽度和高度的 5%，并向左上偏移以保持居中
-                        const widthExpand = parts[2] * 0.05
-                        const heightExpand = parts[3] * 0.05
-                        parts[0] = parts[0] - widthExpand / 2  // minX 左移
-                        parts[1] = parts[1] - heightExpand / 2 // minY 上移
-                        parts[2] = parts[2] + widthExpand      // width 增加
-                        parts[3] = parts[3] + heightExpand     // height 增加
-                        svgEl.setAttribute('viewBox', parts.join(' '))
-                      }
-                    }
-                    // 关键修复：设置 overflow: visible 防止文字被裁剪
-                    svgEl.style.overflow = 'visible'
+                    normalizeMermaidSvg(svgEl)
                     // 正常渲染：替换为 SVG
                     el.replaceWith(svgEl)
                   } else {

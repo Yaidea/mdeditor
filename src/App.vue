@@ -33,6 +33,9 @@
       @toggle-sync-scroll="toggleSyncScroll"
     />
 
+    <!-- 大纲视图 -->
+    <OutlinePanel :markdown-content="markdownContent" />
+
     <!-- 全局回到顶部悬浮按钮 -->
     <BackToTopFloat />
 
@@ -83,6 +86,7 @@ import AppFooter from './components/layout/AppFooter.vue'
 import SettingsPanel from './components/SettingsPanel.vue'
 import MarkdownGuide from './components/MarkdownGuide.vue'
 import BackToTopFloat from './components/BackToTopFloat.vue'
+import OutlinePanel from './components/OutlinePanel.vue'
 
 // 使用应用状态管理
 const {
